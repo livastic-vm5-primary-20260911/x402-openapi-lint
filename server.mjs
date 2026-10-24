@@ -21,6 +21,7 @@ import {inspectPublicTlsCertificate} from "./public-https-tls-preflight.mjs";
 import {getCurrentTapeoutEvidence,TAPEOUT_PAYOUT,TAPEOUT_PRICE_USDC} from "./tapeout/paid-report.mjs";
 import {getLiveTapeoutStateDiff,DIFF_PRICE_USDC,DIFF_BASELINE_BLOCK} from "./tapeout/diff-report.mjs";
 import {summarizeTapeoutSettlement,TAPEOUT_RECEIPT_PATH} from "./tapeout/settlement-audit.mjs";
+import {readLiveFourVenueFunding,DEMO_FUNDING,FUNDING_PRICE_USDC,FUNDING_PAYOUT_BASE} from "./funding/four-venue.mjs";
 
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 const PORT=Number(process.env.PORT||8736);
@@ -57,6 +58,13 @@ const documentation={
   name:"VM5 OpenAPI Lint",
   version:"0.1.0",
   status:"LIVE — two genuine distinct paid-and-delivered x402 calls from the SAME independent NoHumans automated scout: template 0.010000 native Base USDC, CSV report 0.005000 native Base USDC; combined 0.015000 token received. No organic repeat human buyer or fiat cashout proven.",
+  paidFourVenuePerpetualFunding:{
+    method:"GET",path:"/v1/btc-funding-four-venues",priceNativeBaseCircleUSDC:FUNDING_PRICE_USDC,
+    network:NETWORK,asset:"0x833589fCD6eDb6E08f4c7C32d4f71b54bdA02913",payTo:FUNDING_PAYOUT_BASE,
+    scope:"Four fresh public exchange funding-rate quotes for BTC/USDT linear perpetuals: Binance, Bybit, OKX, Bitget. All four fetched before x402; incomplete, stale, malformed or unavailable quotes return 503 without charge.",
+    freePreview:"GET /v1/btc-funding-sample",independentPaidCustomerCount:0,
+    limitations:"Raw public observations only. Venue-specific funding schedules may differ; not annualized, not profitable arbitrage, not price advice, no trading. Original VM1 receive-only Base USDC."
+  },
   paidTapeoutGenesisCpu:{
     method:"GET",path:"/v1/tapeout-cpu0-report",priceUSDC:TAPEOUT_PRICE_USDC,
     payTo:TAPEOUT_PAYOUT,network:NETWORK,
@@ -171,6 +179,18 @@ const routes={
       output:{example:{ok:true,paid:true,chargedUSDC:"0.20",network:NETWORK,staticOnly:true,findingsTruncated:false,
         workflowEvents:["pull_request"],counts:{high:0,medium:1,note:0},noWorkflowExecuted:true,
         confirmedIndependentPaidCustomers:0}}
+    })
+  },
+  "GET /v1/btc-funding-four-venues":{
+    accepts:{scheme:"exact",price:"$"+FUNDING_PRICE_USDC,network:NETWORK,payTo:FUNDING_PAYOUT_BASE},
+    description:"BTCUSDT linear perpetual funding rate comparison of four independent public market-data APIs, each checked fresh and complete BEFORE requesting a 0.01 native Circle Base USDC x402 payment. No API keys, order/signing, leverage or trading; market data may change. Correct source interval differences disclosed. Exact GET only, zero prior paid outside buyers.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:FUNDING_PRICE_USDC,
+        kind:"btc_usdt_perpetual_funding_quoted_four_public_venues",
+        sourceCount:4,exampleOnly:true,rawSpreadBps:0.35,noTradesPerformed:true
+      }}
     })
   },
   "GET /v1/tapeout-cpu0-report":{
@@ -746,6 +766,32 @@ app.get("/v1/tapeout-cpu0-report",async(req,res,next)=>{
 }));
 // Distinct paid historical change-set SKU. No buyer parameters, no payment if
 // one of the two pinned RPC snapshots is incomplete or the chain is unavailable.
+// New original read-only multi-venue futures funding-rate SKU. The sample is
+// deliberately fictional; the paid data requires four complete fresh HTTPS
+// quotes BEFORE the existing Base native Circle USDC x402 middleware.
+app.get("/v1/btc-funding-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/btc-funding-sample"||Object.keys(req.query).length||req.get("Content-Length")||req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact free sample GET with no parameters is supported"});
+  return res.status(200).json({...DEMO_FUNDING,priceNativeBaseCircleUSDC:FUNDING_PRICE_USDC,
+    nextStep:"GET /v1/btc-funding-four-venues",network:NETWORK,payTo:FUNDING_PAYOUT_BASE});
+});
+app.get("/v1/btc-funding-four-venues",async(req,res,next)=>{
+  if(req.originalUrl!=="/v1/btc-funding-four-venues"||
+     Object.keys(req.query).length||req.get("Content-Length")||req.get("Transfer-Encoding")){
+    return res.status(400).json({ok:false,charged:false,error:"Only exact GET without query or body is accepted. No payment requested."});
+  }
+  try{
+    res.locals.fundingSnapshot=await readLiveFourVenueFunding();
+    next();
+  }catch{
+    return res.status(503).json({ok:false,charged:false,error:"Four current independent BTCUSDT funding quotes unavailable. No payment requested."});
+  }
+},payment,(_req,res)=>res.status(200).json({
+  ...res.locals.fundingSnapshot,ok:true,paid:true,chargedUSDC:FUNDING_PRICE_USDC,
+  originalVM1ReceiveOnlyBaseUSDC:FUNDING_PAYOUT_BASE,
+  productPaymentNetwork:NETWORK,independentOrganicBuyersForThisNewSKU:0,
+  disclosure:"The four live public funding estimates are not trade execution, net profitability or guaranteed payments. Quoted only after all four sources passed a freshness/shape check."
+}));
 app.get("/v1/tapeout-cpu0-diff-sample",(_req,res)=>res.status(200).json({
   ok:true,paid:false,chargedUSDC:"0",exampleOnly:true,
   kind:"tapeout_cpu0_two_pinned_blocks_change_only_offer",

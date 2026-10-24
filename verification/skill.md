@@ -35,3 +35,7 @@ Open-source, AI-assisted implementation and free demo:
 https://github.com/livastic-vm5-primary-20260911/tapeout-xlayer-integrity-lens
 
 The seller previously verified only two separate historical paid deliveries **by the same independent automated scout** on other API routes, totalling 0.015 native Base USDC. **No independent paid customer purchase of this TapeOut report was verified as of 2026-10-23.** A catalog listing, HTTP 402 quote, code test, browser visit or sponsor prize advertisement is NOT a purchase. Refund, suitability and costs depend on actual buyer conditions.
+
+## New: four-exchange BTC/USDT perp funding snapshot (read-only)
+Free fictional preview: GET https://vm5-openapi-x402.onrender.com/v1/btc-funding-sample
+Paid exact GET: https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues, 0.01 native Circle Base8453 USDC via x402 v2 to original VM1 0x4e3106520E40af30870caFE78da1B1e7110eD98E. Real-time upstream checks use Binance/Bybit/OKX/Bitget public data; a source error/stale data returns 503 BEFORE x402 payment requirement; no partial paid data. Quotes are not yields, forecasts, advice or actual arbitrage executions. Different funding intervals disclosed. This new SKU has zero proven independent paying buyers. No credential, wallet connection, trade or principal required to inspect the free preview.

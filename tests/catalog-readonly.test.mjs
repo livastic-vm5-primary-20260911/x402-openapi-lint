@@ -26,18 +26,18 @@ test("Exact USDC micro-amount parser rejects rounding, invalid values and arbitr
   assert.throws(()=>makeCatalog(BASE,q),/Unexpected number/);
 });
 
-test("Public origin hosts all fifteen actual configured paid APIs with CAIP2 exact USDC metadata",async()=>{
+test("Public origin hosts all sixteen actual configured paid APIs with CAIP2 exact USDC metadata",async()=>{
   const response=await fetch(BASE+"/discovery/resources");
   assert.equal(response.status,200);
   assert.equal(response.headers.get("payment-required"),null,"read-only discovery never charges");
   const json=await response.json();
   assert.equal(json.x402Version,2);
-  assert.equal(json.pagination.total,15);
+  assert.equal(json.pagination.total,16);
   assert.equal(json.pagination.limit,20);
   assert.equal(json.pagination.offset,0);
-  assert.equal(json.items.length,15);
+  assert.equal(json.items.length,16);
   const urls=json.items.map(item=>item.resource);
-  assert.equal(new Set(urls).size,15);
+  assert.equal(new Set(urls).size,16);
   assert.deepEqual(urls,[...urls].sort((a,b)=>a.localeCompare(b,"en")));
   const spec=await (await fetch(BASE+"/openapi.json")).json();
   assert.ok(spec.paths["/discovery/resources"].get);
@@ -65,19 +65,21 @@ test("Public origin hosts all fifteen actual configured paid APIs with CAIP2 exa
     assert.equal(a.payTo.toLowerCase(),op["x-payment-info"].payTo.toLowerCase(),pathname+" payee must equal API contract");
   }
   const vm1=json.items.filter(x=>x.accepts[0].payTo.toLowerCase()===PAYTO2.toLowerCase());
-  assert.equal(vm1.length,2,"Both distinct TapeOut-only SKUs pay same original VM1 without touching older VM5 product routes");
+  assert.equal(vm1.length,3,"Both original TapeOut SKUs plus new public funding SKU pay same original VM1, preserving 13 VM5 SKUs");
   assert.ok(vm1.some(x=>x.resource===BASE+"/v1/tapeout-cpu0-report"));
   assert.ok(vm1.some(x=>x.resource===BASE+"/v1/tapeout-cpu0-diff"));
+  assert.ok(vm1.some(x=>x.resource===BASE+"/v1/btc-funding-four-venues"),"New third original VM1 recipient route must exist");
   assert.equal(vm1.find(x=>x.resource===BASE+"/v1/tapeout-cpu0-report").accepts[0].amount,"5000");
   assert.equal(vm1.find(x=>x.resource===BASE+"/v1/tapeout-cpu0-diff").accepts[0].amount,"10000");
+  assert.equal(vm1.find(x=>x.resource===BASE+"/v1/btc-funding-four-venues").accepts[0].amount,"10000");
   assert.equal(json.items.filter(x=>x.accepts[0].payTo.toLowerCase()===PAYTO1.toLowerCase()).length,13);
   const old=await(await fetch(BASE+"/.well-known/x402.json")).json();
   assert.equal(old.version,1,"Old v1 origin format preserved for existing indexers");
-  assert.equal(old.resources.length,15,"All old resources kept");
+  assert.equal(old.resources.length,16,"All old resources kept");
   assert.equal(old.discoveryApi,BASE+"/discovery/resources");
 });
 
-test("All live local unsigned payment challenges agree with 15-resource read-only catalog",async()=>{
+test("The original four unsigned x402 challenges match their prices and payees in the new 16-resource catalog",async()=>{
   const catalog=await(await fetch(BASE+"/discovery/resources")).json();
   for(const path of ["/v1/ping","/v1/x402-template","/v1/tapeout-cpu0-report","/v1/tapeout-cpu0-diff"]){
     const r=await fetch(BASE+path);
@@ -98,12 +100,12 @@ test("Read-only price and payee filters are explicit, bounded and never expose a
   }
   const page=await fetchPage("?limit=3&offset=2");
   assert.equal(page.code,200);assert.equal(page.json.pagination.limit,3);
-  assert.equal(page.json.pagination.total,15);assert.equal(page.json.items.length,3);
+  assert.equal(page.json.pagination.total,16);assert.equal(page.json.items.length,3);
   assert.equal(page.header,null);
   const vm1=await fetchPage("?payTo="+PAYTO2.toLowerCase());
-  assert.equal(vm1.code,200);assert.equal(vm1.json.items.length,2);
+  assert.equal(vm1.code,200);assert.equal(vm1.json.items.length,3);
   const mainnet=await fetchPage("?network=eip155%3A8453&scheme=exact&type=http");
-  assert.equal(mainnet.code,200);assert.equal(mainnet.json.items.length,15);
+  assert.equal(mainnet.code,200);assert.equal(mainnet.json.items.length,16);
   const wrong=await fetchPage("?network=eip155%3A1");
   assert.equal(wrong.code,200);assert.equal(wrong.json.items.length,0);
   const unsupported=await fetchPage("?extensions=bazaar");

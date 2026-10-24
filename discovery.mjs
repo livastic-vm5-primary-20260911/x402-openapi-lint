@@ -3,6 +3,7 @@
 import {INVOICE_DEMO} from "./invoice-reconcile.mjs";
 import {TAPEOUT_PAYOUT,TAPEOUT_PRICE_USDC} from "./tapeout/paid-report.mjs";
 import {DIFF_PRICE_USDC,DIFF_BASELINE_BLOCK} from "./tapeout/diff-report.mjs";
+import {FUNDING_PRICE_USDC,FUNDING_PAYOUT_BASE} from "./funding/four-venue.mjs";
 const SYNTHETIC_TRIANGLE_GLB_BASE64="Z2xURgIAAABYAQAAGAEAAEpTT057ImFzc2V0Ijp7InZlcnNpb24iOiIyLjAifSwiYnVmZmVycyI6W3siYnl0ZUxlbmd0aCI6MzZ9XSwiYnVmZmVyVmlld3MiOlt7ImJ1ZmZlciI6MCwiYnl0ZU9mZnNldCI6MCwiYnl0ZUxlbmd0aCI6MzZ9XSwiYWNjZXNzb3JzIjpbeyJidWZmZXJWaWV3IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6MywidHlwZSI6IlZFQzMiLCJtaW4iOlswLDAsMF0sIm1heCI6WzEsMSwwXX1dLCJtZXNoZXMiOlt7InByaW1pdGl2ZXMiOlt7ImF0dHJpYnV0ZXMiOnsiUE9TSVRJT04iOjB9fV19XX0gJAAAAEJJTgAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAA=";
 
 // Read-only, no remote calls, never exposes customer docs or platform credentials.
@@ -15,6 +16,7 @@ export function makeDiscovery(origin) {
   const pingEndpoint=origin+"/v1/ping";
   const tapeoutCpu0Endpoint=origin+"/v1/tapeout-cpu0-report";
   const tapeoutDiffEndpoint=origin+"/v1/tapeout-cpu0-diff";
+  const fundingEndpoint=origin+"/v1/btc-funding-four-venues";
   const receiptEndpoint=origin+"/v1/base-usdc-receipt";
   const glbEndpoint=origin+"/v1/analyze-glb";
   const lowpolyEndpoint=origin+"/v1/generate-lowpoly";
@@ -35,6 +37,7 @@ export function makeDiscovery(origin) {
   const pingPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.001"}};
   const tapeoutPayInfo={...payInfo,payTo:TAPEOUT_PAYOUT,price:{mode:"fixed",currency:"USD",amount:TAPEOUT_PRICE_USDC}};
   const tapeoutDiffPayInfo={...payInfo,payTo:TAPEOUT_PAYOUT,price:{mode:"fixed",currency:"USD",amount:DIFF_PRICE_USDC}};
+  const fourFundingPayInfo={...payInfo,payTo:FUNDING_PAYOUT_BASE,price:{mode:"fixed",currency:"USD",amount:FUNDING_PRICE_USDC}};
   const lowpolyPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.05"}};
   const workflowRiskPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.20"}};
   const receiptPayInfo={
@@ -280,6 +283,26 @@ export function makeDiscovery(origin) {
           "503":{description:"Incomplete public RPC snapshot; no payment requested."}
         }
       }},
+      "/v1/btc-funding-sample":{get:{
+        tags:["Public funding"],summary:"Free synthetic four-venue BTCUSDT perpetual funding snapshot schema (no real rates)",
+        operationId:"fundingFourVenueFictionalSample",security:[],
+        description:"Entirely synthetic/example-only values. No live price, recommendation, wallet or charge.",
+        responses:{"200":{description:"Free fictional output schema only, no x402 payment."}}
+      }},
+      "/v1/btc-funding-four-venues":{get:{
+        tags:["Public funding"],
+        summary:"Four fresh BTCUSDT perpetual funding quotes from Binance, Bybit, OKX, Bitget for 0.01 native Circle Base USDC",
+        operationId:"buyBTCUSDTQuotedFundingRatesFourVenues",
+        security:[{x402Payment:[]}],
+        description:"Strict exact GET; checks all four independent source quotes, symbols and timestamp freshness BEFORE x402 challenge. Incomplete/stale/malformed venue data returns 503 without a charge. Venue-specific funding rates are not realized yield or trading advice. Original VM1 payTo. No paid buyers yet.",
+        "x-payment-info":fourFundingPayInfo,
+        responses:{
+          "200":{description:"Buyer-paid comparison of four fresh source-rate quotes and candid interval/risk caveats."},
+          "400":{description:"Unsupported query/body; no charge."},
+          "402":{description:"Base8453 native CircleUSDC 10000 atomic exact x402 v2 signature required to original VM1."},
+          "503":{description:"Any failed or stale upstream venue rejects BEFORE a paid quote."}
+        }
+      }},
       "/v1/tapeout-cpu0-diff-sample":{get:{
         tags:["TapeOut X Layer"],summary:"Free exact scope and fixed historical block for TapeOut CPU0 change-only report",
         operationId:"previewTapeoutPinnedHistoryDiff",security:[],
@@ -426,8 +449,8 @@ export function makeDiscovery(origin) {
   const wellKnown={
     version:1,
     discoveryApi:origin+"/discovery/resources",
-    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint],
-    instructions:"NEW 0.001 native Base Circle USDC GET /v1/ping is a real paid x402 v2 GET for outside buyer signed-settled middleware integrations, 0 new paid independent users at initial publication. Free /health remains no charge. New $0.005 HTTPS certificate trust/expiry preflight GET /v1/https-cert-preflight and free fictional /v1/tls-certificate-sample, only bounded public IPv4 pinned TLS, no HTTP/SMTP and NO verified paid orders yet. New 0.005 Base native CircleUSDC public email DNS MX/SPF/DMARC check GET /v1/email-dns-preflight and free illustrative /v1/email-dns-sample; no verified buyer for this new route, DNS errors before charging. New 0.01 Base native CircleUSDC GET /v1/x402-preflight reviews public unsigned x402 v2 402 quotes without network fetch or signed data; free GET /v1/x402-sample, source original same-owner VM3 adapted by VM5. Buyer demand for CSV structural preflight observed in public NoHumans search logs. New 0.005 Base native USDC GET /v1/csv-report returns one full reproducible synthetic anomaly pack, POST /v1/csv-preflight audits <=32KB buyer CSV in memory. Invalid inputs rejected BEFORE charge. Paid GET /v1/generate-lowpoly generates an AI-assisted as-is non-exclusive original GLB binary for 0.05 Base Circle USDC, default lantern seed0. POST /v1/analyze-glb reviews GLB metadata for 0.01USDC. GET /v1/x402-template serves an API starter 0.01USDC, POST /v1/lint analyzes OpenAPI 0.01USDC, GET /v1/base-usdc-receipt verifies a public Base native Circle USDC Transfer 0.005USDC. Inputs validated before any charge. GET /v1/lowpoly-sample and /v1/glb-sample free. AI-assisted source public, no exclusive IP claim. Two historic separate paid template and CSV receipts total 0.015 native BaseUSDC from the SAME NoHumans automated scout; no additional new route sales proven.",
+    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint,fundingEndpoint],
+    instructions:"New independent 0.01 native Circle Base USDC GET /v1/btc-funding-four-venues requires four fresh public funding quotes from Binance/Bybit/OKX/Bitget before payment and sends its ONLY new-SKU payout to original VM1 wallet; free synthetic GET /v1/btc-funding-sample, NO verified buyers or trading. NEW 0.001 native Base Circle USDC GET /v1/ping is a real paid x402 v2 GET for outside buyer signed-settled middleware integrations, 0 new paid independent users at initial publication. Free /health remains no charge. New $0.005 HTTPS certificate trust/expiry preflight GET /v1/https-cert-preflight and free fictional /v1/tls-certificate-sample, only bounded public IPv4 pinned TLS, no HTTP/SMTP and NO verified paid orders yet. New 0.005 Base native CircleUSDC public email DNS MX/SPF/DMARC check GET /v1/email-dns-preflight and free illustrative /v1/email-dns-sample; no verified buyer for this new route, DNS errors before charging. New 0.01 Base native CircleUSDC GET /v1/x402-preflight reviews public unsigned x402 v2 402 quotes without network fetch or signed data; free GET /v1/x402-sample, source original same-owner VM3 adapted by VM5. Buyer demand for CSV structural preflight observed in public NoHumans search logs. New 0.005 Base native USDC GET /v1/csv-report returns one full reproducible synthetic anomaly pack, POST /v1/csv-preflight audits <=32KB buyer CSV in memory. Invalid inputs rejected BEFORE charge. Paid GET /v1/generate-lowpoly generates an AI-assisted as-is non-exclusive original GLB binary for 0.05 Base Circle USDC, default lantern seed0. POST /v1/analyze-glb reviews GLB metadata for 0.01USDC. GET /v1/x402-template serves an API starter 0.01USDC, POST /v1/lint analyzes OpenAPI 0.01USDC, GET /v1/base-usdc-receipt verifies a public Base native Circle USDC Transfer 0.005USDC. Inputs validated before any charge. GET /v1/lowpoly-sample and /v1/glb-sample free. AI-assisted source public, no exclusive IP claim. Two historic separate paid template and CSV receipts total 0.015 native BaseUSDC from the SAME NoHumans automated scout; no additional new route sales proven.",
     claim:"Discovery is NOT payment. Two separately settled and delivered actual native BaseUSDC x402 receipts: template 0.01 and CSV 0.005 to SAME external NoHumans scout on 2026-10-19. See free GET /v1/sales-proof; all remaining routes including email DNS have zero confirmed buyer purchases."
   };
   return {spec,wellKnown};

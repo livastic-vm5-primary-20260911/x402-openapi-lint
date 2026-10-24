@@ -84,7 +84,7 @@ test("local mock only, genuine quote challenge unlocks report without chain spen
 });
 test("existing six paid routes preserved, quote is eighth and sample free",()=>{
  const d=makeDiscovery("https://vm5-openapi-x402.onrender.com");
- assert.equal(d.wellKnown.resources.length,15);
+ assert.equal(d.wellKnown.resources.length,16);
  assert.ok(d.wellKnown.resources.some(x=>x.endsWith("/v1/x402-preflight")));
  assert.equal(d.spec.paths["/v1/x402-sample"].get.security.length,0);
  assert.equal(d.spec.paths["/v1/x402-preflight"].get["x-payment-info"].price.amount,"0.01");

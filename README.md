@@ -287,3 +287,7 @@ this route, but did not expose a unique tx hash. Adding this observer later
 cannot reconstruct that past transfer or prove beneficiary receipt. The
 payment middleware, facilitator, 0.005 USDC price, 14 existing paid resources
 and all original wallet recipients remain unchanged.
+
+## New read-only public BTC/USDT perpetual funding compare (x402; original VM1 beneficiary)
+
+The merchant also offers an original, four-venue **public market-data quote comparison** for Binance/Bybit/OKX/Bitget BTC/USDT linear perps. Free fictional schema: [GET /v1/btc-funding-sample](https://vm5-openapi-x402.onrender.com/v1/btc-funding-sample). Paid fresh snapshot: [GET /v1/btc-funding-four-venues](https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues), priced **0.01 native Base8453 Circle USDC** to the original VM1 public payee via standard x402 v2. Four complete upstream reads are required **before** issuing a payment challenge; any failed/stale feed returns HTTP503 and requests **no** buyer payment. Upstream rates are quotes with different schedules, not guaranteed yields or risk-free arbitrage. This offer has **zero independently verified buyer purchases** on publication. Source, validation and safety details: [funding/README.md](funding/README.md). Existing paid API prices and pre-existing payout wallets are unchanged.
