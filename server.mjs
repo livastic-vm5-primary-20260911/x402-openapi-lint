@@ -783,8 +783,13 @@ app.get("/v1/btc-funding-four-venues",async(req,res,next)=>{
   try{
     res.locals.fundingSnapshot=await readLiveFourVenueFunding();
     next();
-  }catch{
-    return res.status(503).json({ok:false,charged:false,error:"Four current independent BTCUSDT funding quotes unavailable. No payment requested."});
+  }catch(err){
+    const reason=err?.code==="FUNDING_SOURCE_UNAVAILABLE"&&typeof err.message==="string" ?
+      err.message.replace(/^Four-venue BTCUSDT public funding snapshot unavailable: /,"").slice(0,120):
+      "Public upstream read failed";
+    // Only a pinned public provider name and bounded status/reason are exposed.
+    // Never echo upstream JSON, account data, stack traces, URLs or auth tokens.
+    return res.status(503).json({ok:false,charged:false,error:"Four current independent BTCUSDT funding quotes unavailable. No payment requested.",publicProviderStatus:reason});
   }
 },payment,(_req,res)=>res.status(200).json({
   ...res.locals.fundingSnapshot,ok:true,paid:true,chargedUSDC:FUNDING_PRICE_USDC,

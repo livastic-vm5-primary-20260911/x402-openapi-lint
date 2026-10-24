@@ -88,3 +88,32 @@ test('New SKU payout and machine-discoverable contract point only to original VM
  assert.ok(wellKnown.resources.includes('https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues'));
  assert.ok(DEMO_FUNDING.exampleOnly && DEMO_FUNDING.noRealMarketQuoteInThisSample);
 });
+
+test('Source-specific free 503 diagnostics disclose only public exchange name/status, never HTTP body, API key, or wallet',async()=>{
+ const inputJson=[{symbol:'BTCUSDT',lastFundingRate:'0.00007',time:t,nextFundingTime:next},
+   jsons[1],jsons[2],jsons[3]];
+ const bad=async url=>{
+   const id=FUNDING_ROUTES.findIndex(x=>x.url===url);
+   assert.ok(id>=0);
+   return id===1 ? response(451,'PROHIBITED_PRIVATE_TOKEN_Q9') : response(200,inputJson[id]);
+ };
+ const r=createFourVenueReader({fetchImpl:bad,clock:()=>t});
+ await assert.rejects(r(),err=>{
+   assert.equal(err.code,'FUNDING_SOURCE_UNAVAILABLE');
+   assert.match(err.message,/Bybit: HTTP 451/);
+   assert.ok(!err.message.includes('PROHIBITED_PRIVATE_TOKEN'));
+   assert.ok(!err.message.includes('futures'));
+   return true;
+ });
+ const offline=createFourVenueReader({fetchImpl:async url=>{
+   if(url.includes('bitget.com')) throw Error('https://private-service/token/abcd failed!!');
+   const id=FUNDING_ROUTES.findIndex(x=>x.url===url);
+   return response(200,inputJson[id]);
+ },clock:()=>t});
+ await assert.rejects(offline(),err=>{
+   assert.match(err.message,/Bitget: public HTTPS fetch failed or timed out/);
+   assert.ok(!err.message.includes('private-service'));
+   assert.ok(!err.message.includes('abcd'));
+   return true;
+ });
+});

@@ -105,6 +105,11 @@ async function getJSON(route,fetchImpl,timeoutMs){
     let json;try{json=JSON.parse(text);}catch{throw new FundingSourceUnavailable(route.venue+": non-JSON response");}
     if(!obj(json))throw new FundingSourceUnavailable(route.venue+": invalid JSON shape");
     return json;
+  }catch(err){
+    // Public status and source name only. Do not surface a network stack,
+    // vendor response body, endpoint query string or internal credentials.
+    if(err instanceof FundingSourceUnavailable)throw err;
+    throw new FundingSourceUnavailable(route.venue+": public HTTPS fetch failed or timed out");
   }finally{clearTimeout(timeout);}
 }
 export function createFourVenueReader({fetchImpl=fetch,clock=Date.now,cacheMs=CACHE_MS,timeoutMs=FETCH_TIMEOUT_MS}={}){
