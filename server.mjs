@@ -19,6 +19,7 @@ import {parsePublicQuote,evaluatePublicQuote,EXAMPLE_QUOTE,VERSION as VM3_QUOTE_
 import {validatePublicDomain,auditEmailDns} from "./email-dns-preflight.mjs";
 import {inspectPublicTlsCertificate} from "./public-https-tls-preflight.mjs";
 import {inspectErc20Calldata,DEFAULT_ERC20_CALLDATA} from "./erc20-calldata-preflight.mjs";
+import {decodeUnsignedERC20Event,SYNTHETIC_ERC20_APPROVAL_EVENT} from "./erc20-event-preflight.mjs";
 import {getCurrentTapeoutEvidence,TAPEOUT_PAYOUT,TAPEOUT_PRICE_USDC} from "./tapeout/paid-report.mjs";
 import {getLiveTapeoutStateDiff,DIFF_PRICE_USDC,DIFF_BASELINE_BLOCK} from "./tapeout/diff-report.mjs";
 import {summarizeTapeoutSettlement,TAPEOUT_RECEIPT_PATH} from "./tapeout/settlement-audit.mjs";
@@ -127,6 +128,13 @@ const documentation={
     input:"One optional nonsecret public calldata hex up to 202 characters; default is an explicitly synthetic approve(maxUint256) example.",
     freePreview:"GET /v1/erc20-calldata-sample",
     limitations:"NOT token-contract verification, onchain allowance, simulation, security certification or transaction authorization. No real third-party buyer of this new product verified."
+  },
+  paidErc20Event:{
+    method:"GET",path:"/v1/erc20-event-preflight",priceUSDC:"0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT,
+    purpose:"Decode two-indexed-address static ERC-20 Transfer and Approval event log topics/data, report raw uint256, max allowance and zero address flags with NO chain/RPC/wallet use.",
+    input:"An optional full set of four public nonsecret 0x hex words (topic0, topic1, topic2, data). No input means explicitly synthetic fixture; partial/invalid input rejected BEFORE payment.",
+    freePreview:"GET /v1/erc20-event-sample",
+    limitations:"Not a contract identity check, NFT detector, actual onchain event lookup, finality verification, current allowance lookup, token-unit conversion, financial or security audit; zero verified independent paid buyers."
   },
   paidCsv:{method:"POST",path:"/v1/csv-preflight",priceUSDC:"0.005",network:NETWORK,
     purpose:"RFC4180-style CSV structural preflight for real buyer CSV bytes. Returns row/column counts, duplicate rows, type mismatches, missing cells and formula injection warnings; never echoes raw row cells or persists uploaded CSV.",
@@ -257,6 +265,24 @@ const routes={
         fieldsCompared:20,changeCount:1,unchangedCount:19,
         changes:[{field:"market.nextListingId",label:"Next market listing ID",before:"3",after:"4"}],
         exampleOnly:true,newIndependentPaidCustomersForDiff:0
+      }}
+    })
+  },
+  "GET /v1/erc20-event-preflight":{
+    accepts:{scheme:"exact",price:"$0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT},
+    description:"Decode strictly formatted publicly provided ERC-20 Transfer/Approval event topics and data only; flags max uint256 Approval and zero addresses. No chain or wallet operations, no onchain proof or NFT support. All bad inputs unpaid HTTP400, real x402 v2 price 0.01 native Circle Base USDC to original VM1 MetaMask.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
+        kind:"evm_erc20_unsigned_event_log_preflight",
+        eventType:"Approval",unlimitedApprovalEvent:true,warningCount:1,
+        decoded:{owner:"0x1111111111111111111111111111111111111111",
+          spender:"0x000000000000000000000000000000000000dead",
+          valueAtomic:"115792089237316195423570985008687907853269984665640564039457584007913129639935"},
+        noWalletOrChainCalls:true,
+        emitterContractVerified:false,logInFinalizedReceiptVerified:false,
+        exampleOnly:true,confirmedIndependentPaidBuyers:0
       }}
     })
   },
@@ -1019,6 +1045,45 @@ app.get("/v1/erc20-calldata-preflight",(req,res,next)=>{
   disclosure:"Only an independent wallet-authorized x402 middleware response entitles paid content; caller must separately verify token contract, network and intent. Not a signature or trade."
 }));
 
+// Different seller data product: EVM receipt *event log* (not a calldata input).
+// Four public log words, strict ABI parsing, no onchain querying or signing.
+app.get("/v1/erc20-event-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/erc20-event-sample"||Object.keys(req.query).length||
+     req.get("Content-Length")||req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact free synthetic example GET without a body"});
+  return res.status(200).json({
+    ...decodeUnsignedERC20Event(SYNTHETIC_ERC20_APPROVAL_EVENT),
+    paid:false,chargedUSDC:"0",exampleOnly:true,
+    input:SYNTHETIC_ERC20_APPROVAL_EVENT,priceNativeBaseCircleUSDC:"0.01",
+    payTo:TAPEOUT_PAYOUT,
+    paidEndpoint:"GET /v1/erc20-event-preflight (optionally topic0,topic1,topic2,data together)",
+    disclaimer:"Completely fictional canonical public approval log. Does not represent an onchain token receipt or buyer."
+  });
+});
+app.get("/v1/erc20-event-preflight",(req,res,next)=>{
+  if(req.originalUrl.length>370||req.get("Content-Length")||req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only bounded unsigned canonical GET input; no body"});
+  const keys=Object.keys(req.query);
+  const allowed=["topic0","topic1","topic2","data"];
+  if(keys.length!==0 && (keys.length!==4||keys.some(x=>!allowed.includes(x)) ||
+     allowed.some(key=>typeof req.query[key]!=="string")))
+    return res.status(400).json({ok:false,charged:false,error:"Provide all four public log words, or omit every query value for a synthetic example"});
+  try{
+    res.locals.publicErc20Event=decodeUnsignedERC20Event(keys.length?{
+      topic0:req.query.topic0,topic1:req.query.topic1,topic2:req.query.topic2,data:req.query.data
+    }:SYNTHETIC_ERC20_APPROVAL_EVENT);
+    res.locals.erc20EventExampleOnly=keys.length===0;
+    next();
+  }catch(error){
+    return res.status(400).json({ok:false,charged:false,error:typeof error.code==="string"?error.code:"INVALID_PUBLIC_ERC20_EVENT"});
+  }
+},mirrorCanonicalVM1Erc20Quote,payment,(_req,res)=>res.status(200).json({
+  ...res.locals.publicErc20Event,
+  paid:true,chargedUSDC:"0.01",network:NETWORK,originalVM1PayoutAddress:TAPEOUT_PAYOUT,
+  exampleOnly:res.locals.erc20EventExampleOnly,confirmedIndependentPaidBuyers:0,
+  disclosure:"No real chain/RPC checked, no proof that an event was actually emitted, and no token contract or spender allowance certified. Caller alone authorizes x402 payment."
+}));
+
 app.get("/v1/x402-template",validateOptionalTemplateFormat,echoCanonicalX402ChallengeOnTemplate,payment,(_req,res)=>res.status(200).json({
   ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
   kind:"x402_v2_openapi_starter",templateFormat:"YAML",openapiTemplate:paymentTemplate,
@@ -1046,7 +1111,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 18 actually configured paid routes, including VM1 ERC20 calldata preflight
+    const catalog=makeCatalog(origin,routes); // 19 actually configured paid routes, including VM1 ERC20 calldata preflight
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -1060,7 +1125,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==18)throw Error("Incomplete public manifest");
+    if(resources.length!==19)throw Error("Incomplete public manifest");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",

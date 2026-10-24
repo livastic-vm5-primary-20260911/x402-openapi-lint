@@ -19,6 +19,7 @@ export function makeDiscovery(origin) {
   const fundingEndpoint=origin+"/v1/btc-funding-four-venues";
   const receiptEndpoint=origin+"/v1/base-usdc-receipt";
   const erc20Endpoint=origin+"/v1/erc20-calldata-preflight";
+  const erc20EventEndpoint=origin+"/v1/erc20-event-preflight";
   const glbEndpoint=origin+"/v1/analyze-glb";
   const lowpolyEndpoint=origin+"/v1/generate-lowpoly";
   const csvReportEndpoint=origin+"/v1/csv-report";
@@ -82,10 +83,10 @@ export function makeDiscovery(origin) {
       "/skill.md":{get:{summary:"Free buyer-facing x402 agent skill, TapeOut VM1 payout and public sample",operationId:"readX402AgentSkill",security:[],responses:{"200":{description:"Public Markdown client guide; no wallet/payment required."}}}},
       "/llms.txt":{get:{summary:"Free machine-readable API guide",operationId:"readMachineApiGuide",security:[],responses:{"200":{description:"Public plain-text tool, prices, samples and source links; no wallet/payment required."}}}},
       "/.well-known/x402-bazaar-manifest.json":{get:{
-        summary:"Free publisher x402 v2 object manifest with all 18 actual paid resources and their true prices/payTo",
+        summary:"Free publisher x402 v2 object manifest with all 19 actual paid resources and their true prices/payTo",
         operationId:"readProviderManifestForPublicX402Directories",
         security:[],
-        description:"Public read-only manifest whose 18 resource objects have a specific URL, method, meaningful description and on-chain Base native Circle USDC payment accepts[] built from the same x402 middleware configuration. No customer, wallet, payment, listing approval, external redirects or secrets.",
+        description:"Public read-only manifest whose 19 resource objects have a specific URL, method, meaningful description and on-chain Base native Circle USDC payment accepts[] built from the same x402 middleware configuration. No customer, wallet, payment, listing approval, external redirects or secrets.",
         responses:{"200":{description:"Provider-owned, no-charge x402 v2 seller manifest."},
           "400":{description:"Invalid public Host/query/body; no merchant payment."}}
       }},
@@ -271,6 +272,46 @@ export function makeDiscovery(origin) {
           "402":{description:"Exact 5000 atomic native Circle Base USDC payment required.",headers:{"PAYMENT-REQUIRED":{schema:{type:"string"}}}},
           "404":{description:"No public domain DNS records found; rejected without payment."},
           "503":{description:"Resolver temporary error; no payment requirement."}
+        }
+      }},
+      "/v1/erc20-event-sample":{get:{
+        tags:["Unsigned ERC-20 Event QA"],
+        summary:"Free strictly fictional canonical Approval event log preflight",
+        operationId:"previewSyntheticERC20Event",security:[],
+        responses:{"200":{description:"Free fictional static ABI event, not a real chain receipt."},
+          "400":{description:"Unknown query or body; unpaid."}}
+      }},
+      "/v1/erc20-event-preflight":{get:{
+        tags:["Unsigned ERC-20 Event QA"],
+        summary:"Offline ERC-20 Transfer/Approval public event decoder with unlimited approval warning",
+        operationId:"decodeUnsignedERC20EventForPayment",
+        security:[{x402Payment:[]}],
+        description:"Strict public four-hex-word ERC-20 static event log parser (topic0/topic1/topic2/data) without RPC, wallet, signatures or state. Unlike calldata analysis this decodes event LOGS, not call INPUT. No-input paid GET uses a transparently synthetic example. Real input fields are optional as a set (all four or none). Reject unknown, duplicate, partial or malformed values BEFORE charging. Not a verified token type, actual emitter, allowance balance or safe transaction.",
+        "x-payment-info":{network:"eip155:8453",price:{mode:"fixed",currency:"USD",amount:"0.01"},payTo:TAPEOUT_PAYOUT},
+        parameters:["topic0","topic1","topic2","data"].map(name=>({name,in:"query",required:false,
+          description:"Provide ALL four public nonsecret log words together, or omit all for the synthetic fixture.",
+          schema:{type:"string",pattern:"^0x[0-9a-fA-F]{64}$",minLength:66,maxLength:66}})),
+        responses:{
+          "200":{description:"Only after actual independently buyer-approved x402 settlement, strict public ABI event metadata.",
+            headers:{"PAYMENT-RESPONSE":{schema:{type:"string"}}},
+            content:{"application/json":{schema:{type:"object",
+              required:["ok","paid","chargedUSDC","kind","eventSignature","eventType","decoded","warningCount","warnings","unlimitedApprovalEvent","noWalletOrChainCalls","originalVM1PayoutAddress"],
+              properties:{
+                ok:{type:"boolean",const:true},paid:{type:"boolean",const:true},
+                chargedUSDC:{type:"string",const:"0.01"},
+                kind:{type:"string",const:"evm_erc20_unsigned_event_log_preflight"},
+                eventSignature:{type:"string",pattern:"^0x[0-9a-f]{64}$"},
+                eventType:{type:"string",enum:["Transfer","Approval"]},
+                decoded:{type:"object",additionalProperties:{type:"string"}},
+                warningCount:{type:"integer",minimum:0},
+                warnings:{type:"array",items:{type:"object"}},
+                unlimitedApprovalEvent:{type:"boolean"},noWalletOrChainCalls:{type:"boolean",const:true},
+                originalVM1PayoutAddress:{type:"string",const:TAPEOUT_PAYOUT},
+                caveat:{type:"string"}
+              }
+            }}}},
+          "400":{description:"Bad log bytes or unsupported signature, NO PAYMENT REQUIRED."},
+          "402":{description:"Canonical x402 v2 exact 0.01 Circle Base8453 USDC to original owner VM1 payTo."}
         }
       }},
       "/v1/erc20-calldata-sample":{get:{
@@ -500,7 +541,7 @@ export function makeDiscovery(origin) {
   const wellKnown={
     version:1,
     discoveryApi:origin+"/discovery/resources",
-    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint,fundingEndpoint,origin+"/v1/aave-base-proxy-facts",erc20Endpoint],
+    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint,fundingEndpoint,origin+"/v1/aave-base-proxy-facts",erc20Endpoint,erc20EventEndpoint],
     instructions:"New ORIGINAL-VM1-paid Aave V3 Base pinned ERC1967 Pool / PoolConfigurator read-only public storage facts, 0.01 native Circle BaseUSDC GET /v1/aave-base-proxy-facts, free illustrative GET /v1/aave-base-proxy-sample, no security audit/governance certification and no new customers proven. New independent 0.01 native Circle Base USDC GET /v1/btc-funding-four-venues requires four actual BTCUSDT perp funding quotes from distinct public exchanges (Binance/Bybit/OKX/Bitget with regional MEXC/Gate.io replacements) before payment and sends its ONLY new-SKU payout to original VM1 wallet; free synthetic GET /v1/btc-funding-sample, NO verified buyers or trading. NEW 0.001 native Base Circle USDC GET /v1/ping is a real paid x402 v2 GET for outside buyer signed-settled middleware integrations, 0 new paid independent users at initial publication. Free /health remains no charge. New $0.005 HTTPS certificate trust/expiry preflight GET /v1/https-cert-preflight and free fictional /v1/tls-certificate-sample, only bounded public IPv4 pinned TLS, no HTTP/SMTP and NO verified paid orders yet. New 0.005 Base native CircleUSDC public email DNS MX/SPF/DMARC check GET /v1/email-dns-preflight and free illustrative /v1/email-dns-sample; no verified buyer for this new route, DNS errors before charging. New 0.01 Base native CircleUSDC GET /v1/x402-preflight reviews public unsigned x402 v2 402 quotes without network fetch or signed data; free GET /v1/x402-sample, source original same-owner VM3 adapted by VM5. Buyer demand for CSV structural preflight observed in public NoHumans search logs. New 0.005 Base native USDC GET /v1/csv-report returns one full reproducible synthetic anomaly pack, POST /v1/csv-preflight audits <=32KB buyer CSV in memory. Invalid inputs rejected BEFORE charge. Paid GET /v1/generate-lowpoly generates an AI-assisted as-is non-exclusive original GLB binary for 0.05 Base Circle USDC, default lantern seed0. POST /v1/analyze-glb reviews GLB metadata for 0.01USDC. GET /v1/x402-template serves an API starter 0.01USDC, POST /v1/lint analyzes OpenAPI 0.01USDC, GET /v1/base-usdc-receipt verifies a public Base native Circle USDC Transfer 0.005USDC. Inputs validated before any charge. GET /v1/lowpoly-sample and /v1/glb-sample free. AI-assisted source public, no exclusive IP claim. Two historic separate paid template and CSV receipts total 0.015 native BaseUSDC from the SAME NoHumans automated scout; no additional new route sales proven.",
     claim:"Discovery is NOT payment. Two separately settled and delivered actual native BaseUSDC x402 receipts: template 0.01 and CSV 0.005 to SAME external NoHumans scout on 2026-10-19. See free GET /v1/sales-proof; all remaining routes including email DNS have zero confirmed buyer purchases."
   };

@@ -40,7 +40,7 @@ The seller previously verified only two separate historical paid deliveries **by
 Free fictional preview: GET https://vm5-openapi-x402.onrender.com/v1/btc-funding-sample
 Paid exact GET: https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues, 0.01 native Circle Base8453 USDC via x402 v2 to original VM1 0x4e3106520E40af30870caFE78da1B1e7110eD98E. Real-time upstream checks use Binance/Bybit/OKX/Bitget public data; a source error/stale data returns 503 BEFORE x402 payment requirement; no partial paid data. Quotes are not yields, forecasts, advice or actual arbitrage executions. Different funding intervals disclosed. This new SKU has zero proven independent paying buyers. No credential, wallet connection, trade or principal required to inspect the free preview.
 
-Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 18 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
+Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 19 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
 
 New **0.01 USDC** original-VM1-paid bounded developer endpoint:
 `GET https://vm5-openapi-x402.onrender.com/v1/erc20-calldata-preflight`
@@ -51,3 +51,14 @@ fail before x402; no RPC, wallet signing, token metadata claims, trading or
 audited security guarantees. Payment recipient is the same original VM1
 public MetaMask address as our BTC funding and TapeOut services; a distinct
 legacy VM5 seller receives other old products. No new paid callers proven.
+
+Additional distinct 0.01 native Base USDC VM1-owned API:
+`GET https://vm5-openapi-x402.onrender.com/v1/erc20-event-preflight`
+parses public canonical ERC20 Transfer/Approval EVENT TOPICS and one 32-byte
+data value, *not a call-data input*. All four `topic0,topic1,topic2,data`
+query words must be present or all omitted for a synthetic fixture.
+Rejects malformed/noncanonical/NFT-indexed layouts BEFORE asking for
+payment, detects uint256-max Approval and zero addresses. Free public
+fictional preview `/v1/erc20-event-sample`. No RPC, wallet, signing,
+contract validation or audit; no verified outside paid customer yet.
+PayTo original VM1 public receive-only address, existing SKU payees intact.

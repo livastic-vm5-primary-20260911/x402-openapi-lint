@@ -65,7 +65,7 @@ NEW 2026-10-23 — independent read-only X Layer TapeOut genesis CPU on-chain sn
 Free fictional preview: GET https://vm5-openapi-x402.onrender.com/v1/btc-funding-sample
 Paid exact GET: https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues, 0.01 native Circle Base8453 USDC via x402 v2 to original VM1 0x4e3106520E40af30870caFE78da1B1e7110eD98E. Real-time upstream checks use Binance/Bybit/OKX/Bitget public data; a source error/stale data returns 503 BEFORE x402 payment requirement; no partial paid data. Quotes are not yields, forecasts, advice or actual arbitrage executions. Different funding intervals disclosed. This new SKU has zero proven independent paying buyers. No credential, wallet connection, trade or principal required to inspect the free preview.
 
-Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 18 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
+Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 19 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
 
 Original ONE-human-owner VM3/VM5 newly introduced Aave V3 Base fixed proxy public information product (2026-10-24): GET https://vm5-openapi-x402.onrender.com/v1/aave-base-proxy-sample is FREE/fictitious. Paid Base Circle USDC0.010000 GET https://vm5-openapi-x402.onrender.com/v1/aave-base-proxy-facts (or ?component=configurator) compares published Aave Pool/PoolConfigurator implementation addresses to exact current ERC1967 implementation/admin/beacon public slots, pinned block and code-size/SHA256 facts; seller payTo ONLY original VM1 Base/Ethereum public address 0x4e3106520E40af30870caFE78da1B1e7110eD98E, token 0x833589fCD6eDb6E08f4C7C32D4f71b54bdA02913. Buyer signs in its own client ONLY after inspecting fresh canonical PAYMENT-REQUIRED; this text and free preview never pay or sign. Read-only bounded public RPC; ZERO private credentials or contract calls. Not a security audit, governance permission assertion, oracle, market/trading advice or new verified customer sale. Source: https://eips.ethereum.org/EIPS/eip-1967 and https://github.com/aave-dao/aave-address-book/blob/main/src/AaveV3Base.sol .
 
@@ -80,3 +80,17 @@ Only static ABI method/addresses/raw uint256; maxUint256 allowance and zero
 address warnings. Invalid calldata 400 before charging. NEVER private keys,
 wallet seeds, signable typed-message objects, customer credentials or secrets;
 no simulation, token-contract verification, safety certificate or sale claim.
+
+Original separate NEW seller offer: Strict offline ERC20 public event-log preflight
+GET https://vm5-openapi-x402.onrender.com/v1/erc20-event-preflight
+Exact Base eip155:8453 Circle native USDC 10000 atomic = $0.01 paid by
+the independent buyer to original owner VM1 receive-only public EVM
+0x4e3106520E40af30870caFE78da1B1e7110eD98E. Free fabricated demo:
+GET https://vm5-openapi-x402.onrender.com/v1/erc20-event-sample.
+For a real PUBLIC NONSECRET log supply ALL 4 URL-encoded words together:
+topic0,topic1,topic2,data (exact 0x + 64 hex chars each); or omit ALL to
+use fictional demo. Decodes canonical ERC20 3-topic Transfer or Approval
+event metadata, raw value, zero-address and uint256-max approval flags.
+WRONG input is HTTP400 and is not charged. No RPC, wallet, signatures,
+token/contract identification, settlement/finality verification or audit.
+Do not submit secrets or assume any independent buyer purchased this SKU.

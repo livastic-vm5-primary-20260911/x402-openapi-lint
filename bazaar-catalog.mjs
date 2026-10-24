@@ -48,7 +48,7 @@ export function makeCatalog(origin,routeConfig) {
       // transaction, customer order, official marketplace listing or settlement.
     };
   }).sort((a,b)=>a.resource.localeCompare(b.resource,"en"));
-  if(items.length!==18)throw Error("Unexpected number of paid routes: 17 existing plus one new ERC20 ABI preflight source");
+  if(items.length!==19)throw Error("Unexpected number of paid routes: 18 existing plus new offline ERC20 event log preflight");
   return Object.freeze({x402Version:2,items});
 }
 export function queryCatalog(catalog,query={}) {

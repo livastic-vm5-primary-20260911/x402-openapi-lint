@@ -86,5 +86,5 @@ test('Public x402 discovery exposes new paid and free URL, no false buyers',()=>
  assert.equal(spec.paths['/v1/invoice-reconcile'].post['x-payment-info'].price.amount,'0.005');
  assert.equal(spec.paths['/v1/invoice-reconcile-sample'].get.security.length,0);
  assert.ok(d.wellKnown.resources.includes('https://vm5-openapi-x402.onrender.com/v1/invoice-reconcile'));
- assert.equal(d.wellKnown.resources.length,18);
+ assert.equal(d.wellKnown.resources.length,19);
 });

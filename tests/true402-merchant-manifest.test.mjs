@@ -50,7 +50,7 @@ test("true402 merchant metadata: free document never changes existing paid produ
  const r=await fetch(BASE+"/.well-known/x402");
  assert.equal(r.status,200);
  const data=await r.json();
- assert.equal(data.resources.length,18);
+ assert.equal(data.resources.length,19);
  assert.equal(data.resources.filter(x=>x.includes("/v1/x402-template")).length,1);
  assert.ok(!data.resources.includes(URL+"/.well-known/x402-service.json"));
 });

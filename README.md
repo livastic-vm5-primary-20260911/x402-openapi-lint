@@ -302,7 +302,7 @@ The merchant also offers an original, four-venue **public market-data quote comp
 
 ## Free read-only manifest for genuine x402 directories
 
-Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **18 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
+Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **19 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
 
 ## ERC-20 unsigned calldata preflight (new VM1-payee 0.01 USDC product)
 
@@ -342,3 +342,40 @@ simulation, an ERC20 allowance query, identity verification, financial
 advice, or a security audit. No organic buyers, paid calls, or cash for
 this new route have been proven at publication. Local test fixtures
 mock the facilitator and do **not** spend real tokens.
+
+## New independent ERC-20 **event log** preflight (0.01 Base native Circle USDC)
+
+Use the completely free and **fictional** example:
+
+```bash
+curl -sS 'https://vm5-openapi-x402.onrender.com/v1/erc20-event-sample'
+```
+
+The new distinct paid endpoint `GET /v1/erc20-event-preflight` evaluates
+four optional, *public and unsigned* canonical event log words `topic0`,
+`topic1`, `topic2`, and `data`, all together or all omitted. An
+omitted query yields the same clearly fictional sample under the standard
+x402 paywall. It recognizes `Transfer(address indexed,address indexed,
+uint256)` and `Approval(address indexed,address indexed,uint256)` and
+reports raw uint256 values, decoded addresses, maximum uint256 approvals
+and zero-address warnings. **This reads log data, NOT call input** and is
+therefore a separate product from `/v1/erc20-calldata-preflight`.
+
+Strict wrong-length words, noncanonical address padding, NFT
+indexed-topic formats, non-ERC20 signatures, duplicate/unknown/incomplete
+query parameters and any request body return HTTP **400 before** an x402
+payment quote. A correct unsigned query returns a true x402 v2 HTTP **402**
+before settlement; genuine client-authorized paid HTTP200 reports require
+actual server middleware settlement. Price **0.01 native Circle USDC on
+Base 8453** to the same original VM1 owner MetaMask public address
+`0x4e3106520E40af30870caFE78da1B1e7110eD98E`. No signed
+transactions, approvals, wallet connection, RPC queries, seed keys, or
+outgoing user funds are needed to explore the free example.
+
+The parser does **not** prove a log was actually emitted, the claimed
+token is ERC-20, token decimals, current spender allowance, contract
+identity, transaction finality, customer intent or any security property.
+NFT Transfer/Approval indexed tokenID layouts are expressly outside
+scope. Do not treat a clean report as a security endorsement. **No
+independent organic customer payments or net profit verified** for
+this new SKU. All other current VM1/VM5 route payouts remain unchanged.

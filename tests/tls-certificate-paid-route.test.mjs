@@ -80,7 +80,7 @@ test("mock facilitator only: after dummy signed test payment returns actual read
 
 test("paid certificate path indexed alongside nine existing x402 APIs, and preview remains free",()=>{
   const manifest=makeDiscovery("https://vm5-openapi-x402.onrender.com");
-  assert.equal(manifest.wellKnown.resources.length,18);
+  assert.equal(manifest.wellKnown.resources.length,19);
   assert.ok(manifest.wellKnown.resources.some(x=>x.endsWith("/v1/https-cert-preflight")));
   const spec=manifest.spec.paths["/v1/https-cert-preflight"].get;
   assert.equal(spec["x-payment-info"].price.amount,"0.005");

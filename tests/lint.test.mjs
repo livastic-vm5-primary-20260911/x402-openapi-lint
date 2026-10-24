@@ -196,7 +196,7 @@ test("Well-known x402 document points at current lint POST route",async()=>{
   const manifest=await r.json();
   assert.equal(manifest.version,1);
   assert.ok(manifest.resources.some(s=>s.endsWith("/v1/lint")));
-  assert.equal(manifest.resources.length,18);
+  assert.equal(manifest.resources.length,19);
   assert.ok(manifest.resources.some(s=>s.endsWith("/v1/generate-lowpoly")));
   assert.ok(manifest.resources.some(s=>s.endsWith("/v1/analyze-glb")));
   assert.ok(manifest.resources.some(s=>s.endsWith("/v1/base-usdc-receipt")));
