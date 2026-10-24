@@ -7,10 +7,18 @@
 
 This is an **existing**, AI-assisted, one-owner merchant selling Base native
 Circle USDC x402 services, not a wallet custodian or exchange. The publisher's
-registration UI confirmed the current origin with **39 resource registration
-records**, 7 publicly unprotected endpoints skipped, and 1 legacy listing
-deprecated. The on-origin OpenAPI separately describes **21 paid operations**
-and 25 ungated routes. A registration count is not the number of paying buyers.
+original registration on 25 October first created **39 resource records**.
+After one additional original Mezo MUSD x402 route was deployed, the official
+same-origin registration refreshed and explicitly confirmed **43 of 43 resource
+records registered**, 5 publicly unprotected endpoints skipped and one
+historical resource deprecated. The **current live OpenAPI** separately
+declares **22 actually payment-gated operations** and 26 ungated routes; these
+counts cover server metadata, **not 43 purchases or 22 paying customers**.
+The new paid GET /v1/mezo-musd-facts costs exactly 0.01 native Circle
+Base USDC to the original VM1 public payee; inspect the completely free
+fictional preview at /v1/mezo-musd-sample before a buyer independently pays.
+No new real outside customer payment or on-chain settlement was verified
+from this directory registration.
 
 The official @agentcash/discovery v1.7.5 CLI now recognizes the original
 paid **ERC-20 event decoder** route with GET, 0.01 USD, x402 payment.
