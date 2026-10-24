@@ -1,0 +1,309 @@
+[
+  {
+    "route": "/v1/workflow-risk",
+    "method": "post",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "415",
+      "429"
+    ],
+    "priceAmount": "0.20",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/base-usdc-receipt",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "404",
+      "409",
+      "422",
+      "425",
+      "503"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/x402-template",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/csv-report",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/invoice-reconcile",
+    "method": "post",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "413",
+      "415",
+      "429"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/csv-preflight",
+    "method": "post",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "413",
+      "429"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/https-cert-preflight",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/email-dns-preflight",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "404",
+      "503"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/base-usdc-allowance",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.01"
+  },
+  {
+    "route": "/v1/erc20-event-preflight",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402"
+    ],
+    "priceAmount": "0.01"
+  },
+  {
+    "route": "/v1/nft-operator-calldata-preflight",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "503"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/erc20-calldata-preflight",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "503"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/aave-base-proxy-facts",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.01"
+  },
+  {
+    "route": "/v1/tapeout-cpu0-report",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.005",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/btc-funding-four-venues",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "503"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/tapeout-cpu0-diff",
+    "method": "get",
+    "payTo": "0x4e3106520E40af30870caFE78da1B1e7110eD98E",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/ping",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "429"
+    ],
+    "priceAmount": "0.001",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/x402-preflight",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "413",
+      "429"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/generate-lowpoly",
+    "method": "get",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "503"
+    ],
+    "priceAmount": "0.05",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/analyze-glb",
+    "method": "post",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "413",
+      "429"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  {
+    "route": "/v1/lint",
+    "method": "post",
+    "payTo": "0x6b01efA0705E91a7aca54271510bf9e594717f34",
+    "network": "eip155:8453",
+    "keys": [
+      "200",
+      "400",
+      "402",
+      "413",
+      "429",
+      "503"
+    ],
+    "priceAmount": "0.01",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  }
+]

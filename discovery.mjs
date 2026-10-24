@@ -32,7 +32,9 @@ export function makeDiscovery(origin) {
   const emailDnsEndpoint=origin+"/v1/email-dns-preflight";
   const httpsCertEndpoint=origin+"/v1/https-cert-preflight";
   const payInfo={
-    protocols:["x402"],
+    // x402scan OpenAPI discovery requires structured protocols; the live v2
+    // PAYMENT-REQUIRED header, facilitator and all payTo/price are unchanged.
+    protocols:[{x402:{}}],
     price:{mode:"fixed",currency:"USD",amount:"0.01"},
     network:"eip155:8453",
     asset:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -288,7 +290,7 @@ export function makeDiscovery(origin) {
         summary:"Real Base native Circle USDC allowance(owner,spender) and balance at ONE current block for 0.01 Base USDC",
         security:[{x402Payment:[]}],
         description:"READ-ONLY fixed native Circle Base8453 USDC contract allowance(owner,spender) and balanceOf(owner) at the same current block. Unlike static calldata/event tools, queries genuine chain state (fixed 2 source-controlled public RPC hosts only); failure 503 before charging. Strict owner+spender as one optional pair of publicly known 20-byte EVM addresses; omitted pair uses actual owner's public VM1 address and fictional burner spender as a LIVE demo query. No signing, token approval, private key, user RPC URL or arbitrary contract. Max-uint256, allowance>balance risk notes. Not onchain safety certification.",
-        "x-payment-info":{network:"eip155:8453",price:{mode:"fixed",currency:"USD",amount:"0.01"},payTo:TAPEOUT_PAYOUT},
+        "x-payment-info":erc20PayInfo,
         parameters:["owner","spender"].map(name=>({name,in:"query",required:false,
           description:"Provide both owner and spender public EVM 0x+40hex addresses, or omit both to query a public example pair.",
           schema:{type:"string",pattern:"^0x[0-9a-fA-F]{40}$"}})),
@@ -330,7 +332,7 @@ export function makeDiscovery(origin) {
         operationId:"decodeUnsignedERC20EventForPayment",
         security:[{x402Payment:[]}],
         description:"Strict public four-hex-word ERC-20 static event log parser (topic0/topic1/topic2/data) without RPC, wallet, signatures or state. Unlike calldata analysis this decodes event LOGS, not call INPUT. No-input paid GET uses a transparently synthetic example. Real input fields are optional as a set (all four or none). Reject unknown, duplicate, partial or malformed values BEFORE charging. Not a verified token type, actual emitter, allowance balance or safe transaction.",
-        "x-payment-info":{network:"eip155:8453",price:{mode:"fixed",currency:"USD",amount:"0.01"},payTo:TAPEOUT_PAYOUT},
+        "x-payment-info":erc20PayInfo,
         parameters:["topic0","topic1","topic2","data"].map(name=>({name,in:"query",required:false,
           description:"Provide ALL four public nonsecret log words together, or omit all for the synthetic fixture.",
           schema:{type:"string",pattern:"^0x[0-9a-fA-F]{64}$",minLength:66,maxLength:66}})),
@@ -445,7 +447,7 @@ export function makeDiscovery(origin) {
         }
       }},
       "/v1/aave-base-proxy-sample":{get:{tags:["DeFi Public State"],summary:"Free illustrative Aave V3 Base ERC-1967 proxy facts example",operationId:"aaveBaseProxySample",security:[],responses:{"200":{description:"Fictional preview, no payment, no live Aave chain state"},"400":{description:"Only exact URL without query or body"}}}},
-      "/v1/aave-base-proxy-facts":{get:{tags:["DeFi Public State"],summary:"Read one Aave V3 Base Pool/Configurator pinned ERC-1967 proxy snapshot for 0.01 Base native USDC",operationId:"readAaveBaseProxyERC1967",security:[{x402Payment:[]}],description:"Only two fixed Aave DAO firstparty-listed Base contracts, official ERC-1967 implementation/admin/beacon slot observations and runtime bytecode sizes and SHA256 at one pinned block. Before payment, a bounded public read completes or replies 503 uncharged. Not an upgrade-rights audit, governance certification, code correctness test or financial advice.",parameters:[{name:"component",in:"query",required:false,schema:{type:"string",enum:["pool","configurator"],default:"pool"}}],"x-payment-info":{network:"eip155:8453",price:{amount:"0.01",currency:"USDC"},payTo:"0x4e3106520E40af30870caFE78da1B1e7110eD98E"},responses:{"200":{description:"After independently buyer-approved x402 payment, a complete pinned public Base upgradeability facts report, not an audit."},"400":{description:"Unrecognized component/query/body, no paywall"},"402":{description:"Canonical signed x402 v2 Base Circle USDC payment required"},"429":{description:"Free prepay read quota exceeded"},"503":{description:"Upstream public state unavailable before payment"}}}},
+      "/v1/aave-base-proxy-facts":{get:{tags:["DeFi Public State"],summary:"Read one Aave V3 Base Pool/Configurator pinned ERC-1967 proxy snapshot for 0.01 Base native USDC",operationId:"readAaveBaseProxyERC1967",security:[{x402Payment:[]}],description:"Only two fixed Aave DAO firstparty-listed Base contracts, official ERC-1967 implementation/admin/beacon slot observations and runtime bytecode sizes and SHA256 at one pinned block. Before payment, a bounded public read completes or replies 503 uncharged. Not an upgrade-rights audit, governance certification, code correctness test or financial advice.",parameters:[{name:"component",in:"query",required:false,schema:{type:"string",enum:["pool","configurator"],default:"pool"}}],"x-payment-info":erc20PayInfo,responses:{"200":{description:"After independently buyer-approved x402 payment, a complete pinned public Base upgradeability facts report, not an audit."},"400":{description:"Unrecognized component/query/body, no paywall"},"402":{description:"Canonical signed x402 v2 Base Circle USDC payment required"},"429":{description:"Free prepay read quota exceeded"},"503":{description:"Upstream public state unavailable before payment"}}}},
       "/v1/tapeout-cpu0-sample":{get:{
         tags:["TapeOut X Layer"],summary:"Free public TapeOut genesis CPU structured-evidence service preview",
         operationId:"tapeoutGenesisOfferPreview",security:[],

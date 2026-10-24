@@ -177,7 +177,7 @@ test("Machine-discoverable OpenAPI metadata exposes one paid POST and accurate 4
  assert.equal(spec.openapi,"3.1.0");
  const op=spec.paths["/v1/lint"].post;
  assert.ok(op);
- assert.equal(op["x-payment-info"].protocols[0],"x402");
+ assert.deepEqual(op["x-payment-info"].protocols,[{x402:{}}]);
  assert.equal(op["x-payment-info"].price.amount,"0.01");
  assert.ok(op.responses["402"]);
  assert.ok(op.requestBody.content["application/json"].example.spec);
