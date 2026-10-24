@@ -513,3 +513,22 @@ tests/mezo-musd-x402-route.test.mjs. Previous 21 payment routes/payees
 preserved; current catalog contains 22 routes. No independent new
 paying buyer or onchain USDC transfer was verified for this product.
 No backing/peg, solvency, bridge, security or yield promises.
+
+### 2026-10-25 original Mezo public summary availability hardening
+
+One fully validated, fixed-token MUSD total-supply/code/symbol snapshot
+from the issuer-listed Mezo mainnet is singleflight-coalesced and may be
+reused for **at most 90 seconds**, with original pinned block,
+sourceObservedAtUtc, sourceAgeSeconds, and sourceWasCached in the
+paid JSON report. This prevents otherwise identical concurrent scanner
+calls from repeatedly hitting the official public RPC, which intermittently
+returns 503 under burst access. **Public wallet-specific owner/spender
+balances and allowances are NEVER cached; they remain actual live
+read-only pinned-block queries.** Cache entry creation requires all six
+source reads to pass pinned contract/chain/ABI/code schema validation.
+On failure, the paid route remains unpaid 503, never a fabricated 402.
+It does not sign, hold keys, transfer, stake or change the original x402
+pricing, recipient, USDC chain/token or other 21 merchant routes.
+The source block explicitly identifies when supply was observed; callers
+requiring exact instantaneous supply can re-query after cache expiry.
+Vendor catalog validation is not a customer or a money transfer.

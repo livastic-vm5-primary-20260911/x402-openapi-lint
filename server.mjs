@@ -31,6 +31,7 @@ import {echoCanonicalX402ChallengeOnFunding} from "./funding/x402-challenge-body
 import {readAaveBaseProxy,validateComponent,AAVE_COMPONENTS,AAVE_BASE_RPC} from "./aave/proxy1967.mjs";
 
 import {readMezoMUSDFacts,parseMUSDQuery,MEZO_TOKEN,MEZO_CHAIN_ID,MEZO_NTT_MANAGER} from "./mezo/musd-readonly.mjs";
+import {createVerifiedMUSDPublicCache} from "./mezo/verified-public-cache.mjs";
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 const PORT=Number(process.env.PORT||8736);
 const BIND_HOST=process.env.HOST||"127.0.0.1";
@@ -78,7 +79,7 @@ const documentation={
     network:NETWORK,asset:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     payTo:FUNDING_PAYOUT_BASE,
     publicDataChain:"eip155:31612",tokenContract:MEZO_TOKEN,nttManager:MEZO_NTT_MANAGER,
-    scope:"One original pinned public Mezo mainnet snapshot: MUSD contract symbol, 18 decimals, exact total supply, runtime bytecode SHA256. Optional two PUBLIC owner/spender EVM addresses yield pinned balance and allowance; no wallet signing, bridging, funds transfers or gas.",
+    scope:"One original pinned public Mezo mainnet snapshot: MUSD contract symbol, 18 decimals, exact total supply, runtime bytecode SHA256. Public metadata snapshots may be reused for at most 90 seconds with exact source observed time and block. Optional two PUBLIC owner/spender EVM addresses yield pinned balance and allowance; no wallet signing, bridging, funds transfers or gas.",
     input:"GET exact /v1/mezo-musd-facts with no query or exactly owner=0x...&spender=0x... (in that order). Never send passwords, seed phrases, signed transactions, API keys or private customer data.",
     freePreview:"GET /v1/mezo-musd-sample is entirely synthetic and incurs no Mezo RPC or payment.",
     limitations:"Public contract metadata and read-only ERC20 observations, NOT BTC reserves, dollar peg, liquidity, bridge solvency, authenticated spender safety, yield, P&L, collateralization, or an audit. Independent paid buyers currently zero.",
@@ -1009,6 +1010,10 @@ app.get("/v1/mezo-musd-sample",(req,res)=>{
     disclaimer:"Do not infer token peg, backing, solvency, bridge safety, spender legitimacy, yield or audit assurance from public ERC20 facts."
   });
 });
+// Cache only a complete fixed original MUSD public state snapshot, not wallet-specific fields.
+const mezoVerifiedPublicSummary=createVerifiedMUSDPublicCache({
+  load:()=>readMezoMUSDFacts({owner:null,spender:null})
+});
 const mezoFactsRateByIP=new Map();
 let mezoFactsInFlight=0;
 app.get("/v1/mezo-musd-facts",async(req,res,next)=>{
@@ -1030,7 +1035,9 @@ app.get("/v1/mezo-musd-facts",async(req,res,next)=>{
     return res.status(503).json({ok:false,charged:false,error:"Read-only Mezo RPC preflight busy; no payment requested"});
   mezoFactsInFlight++;
   try{
-    res.locals.mezoMUSDFacts=await readMezoMUSDFacts({owner:check.owner,spender:check.spender});
+    res.locals.mezoMUSDFacts=check.owner===null
+      ? await mezoVerifiedPublicSummary.get()
+      : await readMezoMUSDFacts({owner:check.owner,spender:check.spender});
     next();
   }catch{
     return res.status(503).json({ok:false,charged:false,
@@ -1042,6 +1049,7 @@ app.get("/v1/mezo-musd-facts",async(req,res,next)=>{
   ...res.locals.mezoMUSDFacts,ok:true,paid:true,chargedUSDC:"0.01",
   paymentNetwork:NETWORK,originalVM1PayTo:FUNDING_PAYOUT_BASE,
   independentPaidCustomerSalesForThisSKU:0,exampleOnly:false,
+  sourceCachePolicy:"Only zero-address public MUSD symbol, supply and pinned code snapshots are cached for at most 90 seconds with exact sourceObservedAtUtc, sourceAgeSeconds and block; actual optional public address balance/allowance is never cached.",
   caution:"A pinned Mezo public ERC20 read is not a bridge transaction, token backing/peg proof, counterparty safety or investment advice."
 }));
 
