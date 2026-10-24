@@ -141,15 +141,15 @@ test('Both distinct TapeOut SKUs pay VM1, all thirteen pre-existing VM5 SKUs rem
  assert.equal(state.accepts[0].amount,'5000');
  assert.equal(state.accepts[0].payTo.toLowerCase(),TAPEOUT_PAYOUT.toLowerCase());
  const catalog=await(await fetch(BASE+'/discovery/resources')).json();
- assert.equal(catalog.pagination.total,20);
+ assert.equal(catalog.pagination.total,21);
  const onlyVM1=catalog.items.filter(x=>x.accepts[0].payTo.toLowerCase()===TAPEOUT_PAYOUT.toLowerCase());
- assert.equal(onlyVM1.length,7);
+ assert.equal(onlyVM1.length,8);
  assert.deepEqual(new Set(onlyVM1.map(x=>x.accepts[0].amount)),new Set(['5000','10000']));
  assert.ok(onlyVM1.some(x=>new URL(x.resource).pathname==='/v1/btc-funding-four-venues'),
    'The new original owner VM1 0.01-USDC four-venue funding route must be discoverable separately');
  assert.equal(catalog.items.filter(x=>x.accepts[0].payTo.toLowerCase()===OLD.toLowerCase()).length,13);
  const d=makeDiscovery('https://vm5-openapi-x402.onrender.com');
- assert.equal(d.wellKnown.resources.length,20);
+ assert.equal(d.wellKnown.resources.length,21);
  assert.ok(d.wellKnown.resources.includes('https://vm5-openapi-x402.onrender.com/v1/tapeout-cpu0-diff'));
  const paid=d.spec.paths['/v1/tapeout-cpu0-diff'].get;
  assert.equal(paid['x-payment-info'].payTo.toLowerCase(),TAPEOUT_PAYOUT.toLowerCase());

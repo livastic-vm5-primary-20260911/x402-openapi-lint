@@ -88,7 +88,7 @@ test("First-party public x402 catalog and JSON schema advertise the real functio
   assert.ok(fields.includes(f),f);
  assert.ok(d.wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com"+PATH));
  const items=(await(await fetch(BASE+"/discovery/resources")).json()).items;
- assert.equal(items.length,20);
+ assert.equal(items.length,21);
  const record=items.find(x=>x.resource===BASE+PATH);
  assert.ok(record);assert.equal(record.accepts[0].amount,"10000");
  assert.equal(record.accepts[0].payTo.toLowerCase(),VM1);

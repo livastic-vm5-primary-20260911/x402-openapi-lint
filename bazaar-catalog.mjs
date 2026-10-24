@@ -48,7 +48,7 @@ export function makeCatalog(origin,routeConfig) {
       // transaction, customer order, official marketplace listing or settlement.
     };
   }).sort((a,b)=>a.resource.localeCompare(b.resource,"en"));
-  if(items.length!==20)throw Error("Unexpected number of paid routes: 19 existing plus new live Base Circle USDC allowance reader");
+  if(items.length!==21)throw Error("Unexpected number of paid routes: 20 prior distinct x402 resources plus one new VM1 wallet-payable NFT operator preflight");
   return Object.freeze({x402Version:2,items});
 }
 export function queryCatalog(catalog,query={}) {
@@ -66,7 +66,7 @@ export function queryCatalog(catalog,query={}) {
     throw Error("Invalid pagination limit");
   if(offsetString!==undefined && !/^(?:0|[1-9][0-9]{0,8})$/.test(offsetString))
     throw Error("Invalid pagination offset");
-  const limit=limitString===undefined?20:Number(limitString);
+  const limit=limitString===undefined?21:Number(limitString);
   const offset=offsetString===undefined?0:Number(offsetString);
   const type=getString("type");
   const scheme=getString("scheme");

@@ -302,7 +302,7 @@ The merchant also offers an original, four-venue **public market-data quote comp
 
 ## Free read-only manifest for genuine x402 directories
 
-Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **20 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
+Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **21 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
 
 ## ERC-20 unsigned calldata preflight (new VM1-payee 0.01 USDC product)
 
@@ -379,6 +379,20 @@ NFT Transfer/Approval indexed tokenID layouts are expressly outside
 scope. Do not treat a clean report as a security endorsement. **No
 independent organic customer payments or net profit verified** for
 this new SKU. All other current VM1/VM5 route payouts remain unchanged.
+
+## Original NFT operator authority calldata preflight — distinct 0.01 Base Circle USDC API
+
+An original AI-assisted, walletless static NFT permissions tool, developed in the VM3 workspace as a proposed contribution to the existing VM5 x402 seller. **A source commit or PR does not establish that the production seller has deployed it or that a customer has purchased it.**
+
+- **Free synthetic preview after deployment:** GET /v1/nft-operator-calldata-sample. No chain access, wallet, signature or charge; every example is fictional.
+- **Optional paid review after deployment:** GET /v1/nft-operator-calldata-preflight, requiring buyer-authorized exact **0.010000 native Circle USDC on Base chain 8453**, payable directly to the original one-owner VM1 public MetaMask payee **0x4e3106520E40af30870caFE78da1B1e7110eD98E** via standard existing x402 v2 middleware. An unpaid HTTP 402 quote is not a purchase.
+- A public, **unsigned** calldata query is exactly 138 hexadecimal characters including 0x, representing 4-byte selector and two ABI words. The default omitted calldata is an explicitly synthetic example. The optional standard is unspecified, erc721 or erc1155, default unspecified.
+- Decode **setApprovalForAll(address,bool)** (0xa22cb465) under ERC-721 or ERC-1155 and warn when one operator may receive **collection-wide** permissions. Refuse noncanonical ABI bool values, address padding, unsupported selectors and malformed/partial query **before payment**.
+- Decode **approve(address,uint256)** (0x095ea7b3) only when the caller explicitly declares standard erc721. This selector also denotes ERC-20 approve; the parser cannot authenticate token standards. A token ID is never incorrectly described as an unlimited ERC-20 allowance.
+- **Limitations:** No live RPC, smart-contract identity verification, NFT ownership lookup, simulated transaction, operator-trust score, chain signing, permission grant/revocation, wallet custody or security certification. Static bytes alone cannot establish current approvals or safe transaction intent.
+- Source module: nft-operator-calldata-preflight.mjs. Dedicated offline test and mocked middleware tests: tests/nft-operator-calldata-preflight.test.mjs and tests/nft-operator-x402-paid-route.test.mjs. Locally simulated payments are fake fixtures, **not** independent sales, wallet transfers or earned USDC.
+
+The default public synthetic setApprovalForAll example decodes operator **0x000000000000000000000000000000000000dEaD** with approved=true. Start with the free sample; do not supply recovery phrases, private keys, credentials or signed payment data as the calldata query.
 
 ## Read actual native Circle USDC allowance on Base — distinct live read-only x402 API
 

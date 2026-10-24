@@ -19,6 +19,7 @@ import {parsePublicQuote,evaluatePublicQuote,EXAMPLE_QUOTE,VERSION as VM3_QUOTE_
 import {validatePublicDomain,auditEmailDns} from "./email-dns-preflight.mjs";
 import {inspectPublicTlsCertificate} from "./public-https-tls-preflight.mjs";
 import {inspectErc20Calldata,DEFAULT_ERC20_CALLDATA} from "./erc20-calldata-preflight.mjs";
+import {inspectNftOperatorCalldata,SYNTHETIC_NFT_OPERATOR_APPROVAL} from "./nft-operator-calldata-preflight.mjs";
 import {decodeUnsignedERC20Event,SYNTHETIC_ERC20_APPROVAL_EVENT} from "./erc20-event-preflight.mjs";
 import {readBaseNativeUsdcAllowance,asAllowanceReport,validateAllowanceQuery,
   SYNTHETIC_QUERY_OWNER,SYNTHETIC_QUERY_SPENDER} from "./base-usdc-allowance.mjs";
@@ -137,6 +138,14 @@ const documentation={
     input:"An optional full set of four public nonsecret 0x hex words (topic0, topic1, topic2, data). No input means explicitly synthetic fixture; partial/invalid input rejected BEFORE payment.",
     freePreview:"GET /v1/erc20-event-sample",
     limitations:"Not a contract identity check, NFT detector, actual onchain event lookup, finality verification, current allowance lookup, token-unit conversion, financial or security audit; zero verified independent paid buyers."
+  },
+  paidNftOperatorAuthorization:{
+    method:"GET",path:"/v1/nft-operator-calldata-preflight",priceNativeBaseCircleUSDC:"0.010000",
+    network:NETWORK,payTo:TAPEOUT_PAYOUT,
+    purpose:"Decode strictly canonical public unsigned ERC-721 / ERC-1155 setApprovalForAll(operator,bool) bytes and ERC-721 approve(spender,tokenId), distinguishing collection-wide authority from a single token permission. No RPC, signer, contract identity verification or permission modification.",
+    input:"Optional one public 138-character calldata hex and standard=unspecified|erc721|erc1155 (default unspecified). Explicit erc721 is REQUIRED to interpret ambiguous ERC-20/721 approve selector. Malformed inputs fail before the payment challenge.",
+    freePreview:"GET /v1/nft-operator-calldata-sample",
+    caveat:"An offline ABI decoder cannot authenticate the called contract, identify trusted operators or prove current permissions. Only an independently buyer-approved Base USDC x402 payment unlocks the actual result; no independent buyers yet."
   },
   paidBaseCircleAllowance:{
     method:"GET",path:"/v1/base-usdc-allowance",priceUSDC:"0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT,
@@ -293,6 +302,22 @@ const routes={
         allowanceExceedsCurrentBalance:true,calledOnlyReadMethods:true,
         exampleOnly:true,independentPaidBuyersVerified:0,
         fictitiousExampleWarning:"This is a fully fictitious example, NOT a current allowance or actual paid x402 delivery."
+      }}
+    })
+  },
+  "GET /v1/nft-operator-calldata-preflight":{
+    accepts:{scheme:"exact",price:"$0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT},
+    description:"A distinct walletless NFT collection-operator permissions ABI interpretation service: unsigned static ERC721/ERC1155 setApprovalForAll and explicitly-declared ERC721 approve. Strict canonical input before payment, original VM1 MetaMask payee, no approval/signing/chain queries or real NFT security certification.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:"0.01",kind:"evm_nft_unsigned_operator_authorization_preflight",
+        selector:"0xa22cb465",interpretedStandard:"ERC-721_OR_ERC-1155_DECLARED_BY_CALLER",
+        action:"setApprovalForAll",decoded:{operator:"0x000000000000000000000000000000000000dead",approved:true},
+        warningCount:1,warnings:[{code:"COLLECTION_WIDE_OPERATOR_APPROVAL"}],
+        noRpcWalletPrivateDataOrBlockchainCalls:true,noTransactionSent:true,
+        isCurrentApprovalConfirmedOnchain:false,exampleOnly:true,
+        independentlyPaidBuyersForNewRoute:0
       }}
     })
   },
@@ -1112,6 +1137,46 @@ app.get("/v1/erc20-event-preflight",(req,res,next)=>{
   disclosure:"No real chain/RPC checked, no proof that an event was actually emitted, and no token contract or spender allowance certified. Caller alone authorizes x402 payment."
 }));
 
+// DISTINCT NFT ERC721/ERC1155 unsigned operator-authorization ABI semantics.
+// No contract call, address ownership assertion, signing, approval or chain data.
+app.get("/v1/nft-operator-calldata-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/nft-operator-calldata-sample" ||
+     req.get("Content-Length") || req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only a free exact GET of fictional NFT operator bytes is supported."});
+  return res.status(200).json({
+    ...inspectNftOperatorCalldata(),
+    paid:false,chargedUSDC:"0",exampleOnly:true,
+    unsignedCalldata:SYNTHETIC_NFT_OPERATOR_APPROVAL,
+    paidEndpoint:"GET /v1/nft-operator-calldata-preflight?calldata=0x...&standard=erc721",
+    priceNativeBaseCircleUSDC:"0.01",payTo:TAPEOUT_PAYOUT,
+    disclosure:"Illustrative unsigned ABI only; this sample never represents a real NFT approval, owned token, collection, paid call, signature or onchain permission."
+  });
+});
+app.get("/v1/nft-operator-calldata-preflight",(req,res,next)=>{
+  const keys=Object.keys(req.query);
+  if(req.originalUrl.length>350 || req.get("Content-Length") ||
+     req.get("Transfer-Encoding") || keys.length>2 ||
+     keys.some(key=>!["calldata","standard"].includes(key)) ||
+     (req.query.calldata!==undefined && typeof req.query.calldata!=="string") ||
+     (req.query.standard!==undefined && typeof req.query.standard!=="string"))
+    return res.status(400).json({ok:false,charged:false,error:"Only one unsigned canonical calldata and optional declared ERC721/1155 standard are supported."});
+  try{
+    res.locals.nftOperatorReport=inspectNftOperatorCalldata(req.query.calldata,req.query.standard);
+    res.locals.nftSampleOnly=req.query.calldata===undefined;
+    next();
+  }catch(e){
+    return res.status(400).json({ok:false,charged:false,
+      error:typeof e.code==="string"?e.code:"INVALID_UNSIGNED_NFT_OPERATOR_CALLDATA"});
+  }
+},mirrorCanonicalVM1Erc20Quote,payment,(_req,res)=>res.status(200).json({
+  ...res.locals.nftOperatorReport,
+  paid:true,chargedUSDC:"0.01",network:NETWORK,
+  originalVM1PayoutAddress:TAPEOUT_PAYOUT,
+  exampleOnly:res.locals.nftSampleOnly,
+  confirmedIndependentPaidBuyers:0,
+  disclosure:"Real paid delivery requires separate buyer-signed x402 middleware settlement. This is only syntax; chain, NFT collection, operator and actual transfer approval are NOT certified."
+}));
+
 // Genuine live RPC Base8453 Circle native USDC allowance; NO transaction/approval.
 app.get("/v1/base-usdc-allowance-sample",(req,res)=>{
   if(req.originalUrl!=="/v1/base-usdc-allowance-sample" ||
@@ -1192,7 +1257,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 20 actually configured paid routes, including original VM1 live Circle allowance snapshot
+    const catalog=makeCatalog(origin,routes); // 21 real configured paid routes, including the new original VM1 wallet-paid NFT permissions ABI decoder
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -1206,7 +1271,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==20)throw Error("Incomplete public manifest");
+    if(resources.length!==21)throw Error("Incomplete public manifest: expected 20 original resources plus new NFT operator API");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",
