@@ -843,6 +843,44 @@ app.get(["/.well-known/x402","/.well-known/x402.json"],(req,res)=>{
   catch{return res.status(503).json({error:"Discovery host not available."});}
 });
 
+// Free machine-readable x402 v2 publisher manifest for public marketplaces
+// that require objects with url + accepts[] (the older .well-known/x402.json
+// intentionally retains its previous string-resource list for compatibility).
+// Every term comes from the SAME live in-process x402 paymentMiddleware route
+// map, never a client-supplied URL, guessed price or fabricated settlement.
+app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
+  if(req.originalUrl!=="/.well-known/x402-bazaar-manifest.json" ||
+     Object.keys(req.query).length || req.get("Content-Length") || req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact public GET without parameters is allowed."});
+  try{
+    const origin=req.protocol+"://"+req.get("host");
+    makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
+    const catalog=makeCatalog(origin,routes); // 16 actual unmodified paid routes
+    const resources=catalog.items.map(row=>{
+      const path=new URL(row.resource).pathname;
+      const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
+      if(matching.length!==1)throw Error("Ambiguous paid resource");
+      const [routeKey,info]=matching[0];
+      const method=routeKey.split(" ",1)[0];
+      return {
+        url:row.resource,resource:row.resource,method,
+        description:String(info.description||"").slice(0,650),
+        x402Version:2,
+        accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
+      };
+    });
+    if(resources.length!==16)throw Error("Incomplete public manifest");
+    res.setHeader("Cache-Control","public, max-age=120");
+    return res.status(200).json({
+      x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",
+      resources,
+      disclaimer:"Provider-declared catalog of paid routes, NOT proof of marketplace indexing, independent paid buyers, settlement, wallet control or a purchase. Each buyer elects to sign an individual x402 authorization."
+    });
+  }catch{
+    return res.status(400).json({ok:false,charged:false,error:"Invalid public origin or paid source route map"});
+  }
+});
+
 // FREE self-hosted schema-shaped x402 v2 catalog. This is not a
 // third-party Bazaar approval or a facilitator; all quotes come directly
 // from our actual configured paid routes. No wallet, RPC, payer or POST.

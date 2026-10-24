@@ -79,6 +79,14 @@ export function makeDiscovery(origin) {
     paths:{
       "/skill.md":{get:{summary:"Free buyer-facing x402 agent skill, TapeOut VM1 payout and public sample",operationId:"readX402AgentSkill",security:[],responses:{"200":{description:"Public Markdown client guide; no wallet/payment required."}}}},
       "/llms.txt":{get:{summary:"Free machine-readable API guide",operationId:"readMachineApiGuide",security:[],responses:{"200":{description:"Public plain-text tool, prices, samples and source links; no wallet/payment required."}}}},
+      "/.well-known/x402-bazaar-manifest.json":{get:{
+        summary:"Free publisher x402 v2 object manifest with all 16 actual paid resources and their true prices/payTo",
+        operationId:"readProviderManifestForPublicX402Directories",
+        security:[],
+        description:"Public read-only manifest whose 16 resource objects have a specific URL, method, meaningful description and on-chain Base native Circle USDC payment accepts[] built from the same x402 middleware configuration. No customer, wallet, payment, listing approval, external redirects or secrets.",
+        responses:{"200":{description:"Provider-owned, no-charge x402 v2 seller manifest."},
+          "400":{description:"Invalid public Host/query/body; no merchant payment."}}
+      }},
       "/discovery/resources":{get:{summary:"Free bounded read-only x402 v2 pricing and resource catalog",operationId:"readLocalX402ResourceCatalog",security:[],description:"Only this merchant's current signed-free payment configuration, NOT independent Bazaar enrollment, human customer sales, or third-party settlement. Filter payTo/network/scheme and paginate without signatures.",responses:{"200":{description:"Public catalog, no wallet, no signing, no facilitator calls."},"400":{description:"Invalid pagination, filter or Origin."}}}},
       "/health":{get:{summary:"Free health check",operationId:"health",security:[],responses:{"200":{description:"Current service health."}}}},
       "/v1/docs":{get:{summary:"Free API documentation and payment terms",operationId:"readApiContract",security:[],responses:{"200":{description:"Public terms, recipient and schema."}}}},
