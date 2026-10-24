@@ -76,3 +76,15 @@ Completely free fictional example `/v1/base-usdc-allowance-sample`
 requires no chain RPC. Flags max(uint256) allowance and exceeds-current
 USDC balance; NOT spender legitimacy, contract audit, future balance,
 actual token approval, trading, or proof of a real paid buyer.
+
+## New: Mezo MUSD mainnet public ERC20 facts, 2026-10-25
+
+Zero-charge synthetic product preview: GET https://vm5-openapi-x402.onrender.com/v1/mezo-musd-sample
+Real paid data: GET https://vm5-openapi-x402.onrender.com/v1/mezo-musd-facts
+Optional caller public input: ?owner=0x(40hex)&spender=0x(40hex) in that exact order. Only public addresses; no private data.
+
+Issuer reference https://mezo.org/docs/users/resources/contracts-reference
+Data chain is Mezo eip155:31612. Fixed issuer contract 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186. Returns pinned symbol, decimals, totalSupply, code SHA256, optional owner public balance/allowance.
+Distinct payment chain is Base eip155:8453, token native Circle USDC, price 0.01 (10000 atomic) sent only by an independently authorized outside buyer to the existing original VM1 MetaMask public receive-only 0x4e3106520E40af30870caFE78da1B1e7110eD98E. No bridges, no sender wallet signing by the merchant. Bad inputs, RPC outage and quota failures are unpaid.
+Never enter seed, private keys, passwords, OTP or nonpublic data. This is NOT a peg/backing/solvency/bridge/yield/safety audit or investment recommendation. NO newly verified independent paying customers, cash or revenue claimed for this SKU.
+Version reconciliation: the original x402 merchant now declares 22 configured paid routes, preserving original 21 routes and recipient/price pairs plus one new Mezo MUSD report. Old earlier 20/21 counts in this document are historic. Live manifest is the true current public source.

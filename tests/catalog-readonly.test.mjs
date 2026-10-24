@@ -26,18 +26,18 @@ test("Exact USDC micro-amount parser rejects rounding, invalid values and arbitr
   assert.throws(()=>makeCatalog(BASE,q),/Unexpected number/);
 });
 
-test("Public origin hosts all twenty-one actual configured paid APIs with CAIP2 exact USDC metadata",async()=>{
+test("Public origin hosts all twenty-two actual configured paid APIs with CAIP2 exact USDC metadata",async()=>{
   const response=await fetch(BASE+"/discovery/resources");
   assert.equal(response.status,200);
   assert.equal(response.headers.get("payment-required"),null,"read-only discovery never charges");
   const json=await response.json();
   assert.equal(json.x402Version,2);
-  assert.equal(json.pagination.total,21);
-  assert.equal(json.pagination.limit,21);
+  assert.equal(json.pagination.total,22);
+  assert.equal(json.pagination.limit,22);
   assert.equal(json.pagination.offset,0);
-  assert.equal(json.items.length,21);
+  assert.equal(json.items.length,22);
   const urls=json.items.map(item=>item.resource);
-  assert.equal(new Set(urls).size,21);
+  assert.equal(new Set(urls).size,22);
   assert.deepEqual(urls,[...urls].sort((a,b)=>a.localeCompare(b,"en")));
   const spec=await (await fetch(BASE+"/openapi.json")).json();
   assert.ok(spec.paths["/discovery/resources"].get);
@@ -65,7 +65,7 @@ test("Public origin hosts all twenty-one actual configured paid APIs with CAIP2 
     assert.equal(a.payTo.toLowerCase(),op["x-payment-info"].payTo.toLowerCase(),pathname+" payee must equal API contract");
   }
   const vm1=json.items.filter(x=>x.accepts[0].payTo.toLowerCase()===PAYTO2.toLowerCase());
-  assert.equal(vm1.length,8,"Original two TapeOut, BTC funding, Aave Base and ERC20 preflight pay original VM1; preserve 13 existing VM5-payto SKUs");
+  assert.equal(vm1.length,9,"Original original VM1 payout group now adds exactly one Mezo MUSD API; preserve 13 existing VM5-payto SKUs");
   assert.ok(vm1.some(x=>x.resource===BASE+"/v1/tapeout-cpu0-report"));
   assert.ok(vm1.some(x=>x.resource===BASE+"/v1/tapeout-cpu0-diff"));
   assert.ok(vm1.some(x=>x.resource===BASE+"/v1/btc-funding-four-venues"),"New third original VM1 recipient route must exist");
@@ -75,11 +75,11 @@ test("Public origin hosts all twenty-one actual configured paid APIs with CAIP2 
   assert.equal(json.items.filter(x=>x.accepts[0].payTo.toLowerCase()===PAYTO1.toLowerCase()).length,13);
   const old=await(await fetch(BASE+"/.well-known/x402.json")).json();
   assert.equal(old.version,1,"Old v1 origin format preserved for existing indexers");
-  assert.equal(old.resources.length,21,"All 20 prior resources retained and one new real NFT operator API added");
+  assert.equal(old.resources.length,22,"All 21 prior resources retained plus one original VM1 payee Mezo MUSD API added");
   assert.equal(old.discoveryApi,BASE+"/discovery/resources");
 });
 
-test("The original four unsigned x402 challenges match their prices and payees in the new 21-resource catalog",async()=>{
+test("The original four unsigned x402 challenges match their prices and payees in the new 22-resource catalog",async()=>{
   const catalog=await(await fetch(BASE+"/discovery/resources")).json();
   for(const path of ["/v1/ping","/v1/x402-template","/v1/tapeout-cpu0-report","/v1/tapeout-cpu0-diff"]){
     const r=await fetch(BASE+path);
@@ -100,12 +100,12 @@ test("Read-only price and payee filters are explicit, bounded and never expose a
   }
   const page=await fetchPage("?limit=3&offset=2");
   assert.equal(page.code,200);assert.equal(page.json.pagination.limit,3);
-  assert.equal(page.json.pagination.total,21);assert.equal(page.json.items.length,3);
+  assert.equal(page.json.pagination.total,22);assert.equal(page.json.items.length,3);
   assert.equal(page.header,null);
   const vm1=await fetchPage("?payTo="+PAYTO2.toLowerCase());
-  assert.equal(vm1.code,200);assert.equal(vm1.json.items.length,8,"VM1 owns both TapeOut, BTC funding, Aave V3 Base and new ERC20 calldata SKU");
+  assert.equal(vm1.code,200);assert.equal(vm1.json.items.length,9,"VM1 retains eight pre-existing direct-pay SKUs and gains exactly one direct-pay Mezo MUSD read-only SKU");
   const mainnet=await fetchPage("?network=eip155%3A8453&scheme=exact&type=http");
-  assert.equal(mainnet.code,200);assert.equal(mainnet.json.items.length,21);
+  assert.equal(mainnet.code,200);assert.equal(mainnet.json.items.length,22);
   const wrong=await fetchPage("?network=eip155%3A1");
   assert.equal(wrong.code,200);assert.equal(wrong.json.items.length,0);
   const unsupported=await fetchPage("?extensions=bazaar");

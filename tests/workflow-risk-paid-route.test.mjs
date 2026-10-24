@@ -117,7 +117,7 @@ test("OpenAPI, public x402 discovery, old signed prices and user wallet remain a
  assert.equal(op.security[0].x402Payment.length,0);
  assert.ok(op.responses["400"]);assert.ok(op.responses["402"]);
  assert.ok(wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com/v1/workflow-risk"));
- assert.equal(wellKnown.resources.length,21);
+ assert.equal(wellKnown.resources.length,22);
  assert.deepEqual(spec.paths["/v1/workflow-risk-sample"].get.security,[]);
  assert.equal(spec.paths["/v1/csv-report"].get["x-payment-info"].price.amount,"0.005");
  assert.equal(spec.paths["/v1/x402-template"].get["x-payment-info"].price.amount,"0.01");

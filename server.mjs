@@ -30,6 +30,7 @@ import {readLiveFourVenueFunding,DEMO_FUNDING,FUNDING_PRICE_USDC,FUNDING_PAYOUT_
 import {echoCanonicalX402ChallengeOnFunding} from "./funding/x402-challenge-body-compat.mjs";
 import {readAaveBaseProxy,validateComponent,AAVE_COMPONENTS,AAVE_BASE_RPC} from "./aave/proxy1967.mjs";
 
+import {readMezoMUSDFacts,parseMUSDQuery,MEZO_TOKEN,MEZO_CHAIN_ID,MEZO_NTT_MANAGER} from "./mezo/musd-readonly.mjs";
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 const PORT=Number(process.env.PORT||8736);
 const BIND_HOST=process.env.HOST||"127.0.0.1";
@@ -71,6 +72,18 @@ const documentation={
     scope:"Four fresh public exchange funding-rate quotes for BTC/USDT linear perpetuals: Binance, Bybit, OKX, Bitget, with named MEXC/Gate.io backups if one original venue is region-blocked. Four ACTUAL successful distinct quotes before x402; incomplete, stale, malformed or unavailable quotes return 503 without charge.",
     freePreview:"GET /v1/btc-funding-sample",independentPaidCustomerCount:0,
     limitations:"Raw public observations only. Venue-specific funding schedules may differ; not annualized, not profitable arbitrage, not price advice, no trading. Original VM1 receive-only Base USDC."
+  },
+  paidMezoMUSDFacts:{
+    method:"GET",path:"/v1/mezo-musd-facts",priceNativeBaseCircleUSDC:"0.01",
+    network:NETWORK,asset:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    payTo:FUNDING_PAYOUT_BASE,
+    publicDataChain:"eip155:31612",tokenContract:MEZO_TOKEN,nttManager:MEZO_NTT_MANAGER,
+    scope:"One original pinned public Mezo mainnet snapshot: MUSD contract symbol, 18 decimals, exact total supply, runtime bytecode SHA256. Optional two PUBLIC owner/spender EVM addresses yield pinned balance and allowance; no wallet signing, bridging, funds transfers or gas.",
+    input:"GET exact /v1/mezo-musd-facts with no query or exactly owner=0x...&spender=0x... (in that order). Never send passwords, seed phrases, signed transactions, API keys or private customer data.",
+    freePreview:"GET /v1/mezo-musd-sample is entirely synthetic and incurs no Mezo RPC or payment.",
+    limitations:"Public contract metadata and read-only ERC20 observations, NOT BTC reserves, dollar peg, liquidity, bridge solvency, authenticated spender safety, yield, P&L, collateralization, or an audit. Independent paid buyers currently zero.",
+    originalIssuerReference:"https://mezo.org/docs/users/resources/contracts-reference",
+    independentlyVerifiedOutsidePaidCustomers:0
   },
   paidAaveBaseERC1967:{
     method:"GET",path:"/v1/aave-base-proxy-facts",priceNativeBaseCircleUSDC:"0.01",
@@ -225,6 +238,21 @@ const routes={
       output:{example:{ok:true,paid:true,chargedUSDC:"0.20",network:NETWORK,staticOnly:true,findingsTruncated:false,
         workflowEvents:["pull_request"],counts:{high:0,medium:1,note:0},noWorkflowExecuted:true,
         confirmedIndependentPaidCustomers:0}}
+    })
+  },
+  "GET /v1/mezo-musd-facts":{
+    accepts:{scheme:"exact",price:"$0.01",network:NETWORK,payTo:FUNDING_PAYOUT_BASE},
+    description:"Mezo MUSD mainnet (eip155:31612) immutable fixed-token pinned ERC20 symbol/decimals/totalSupply/code hash, and optional owner/spender public balance/allowance. Complete strict public Mezo read before 0.01 native Circle Base USDC signed x402 payment. Not a backing/peg/yield/bridge-audit claim. No keys, transactions, balances moved or payer self-purchase.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:"0.01",paymentNetwork:"eip155:8453",
+        kind:"mezo_musd_pinned_erc20_readonly_facts",
+        dataChain:"eip155:31612",contract:MEZO_TOKEN,
+        symbol:"MUSD",decimals:18,totalSupplyMUSD:"FICTIONAL_EXAMPLE_ONLY",
+        exampleOnly:true,noWalletKeysOrSigning:true,
+        independentPaidCustomers:0
+      }}
     })
   },
   "GET /v1/aave-base-proxy-facts":{
@@ -731,6 +759,36 @@ app.get("/v1/base-usdc-receipt",async(req,res,next)=>{
 // Only the original VM1 paid Aave V3 Base facts GET: mirror a completely
 // validated canonical public x402 header, never generate a payment requirement,
 // change the signed transport, verify/settle, or accept another buyer recipient.
+// Public quote-copy for THIS ONE MUSD SKU only; never synthesizes a payment,
+// alters the chosen token/recipient, signs, verifies, settles, or moves funds.
+function echoCanonicalMezoMUSD402(req,res,next){
+  const send=res.send;
+  res.send=function(body){
+    const wire=res.getHeader("PAYMENT-REQUIRED");
+    if(res.statusCode===402 && typeof wire==="string" && wire.length<19000){
+      try{
+        const quote=JSON.parse(Buffer.from(wire,"base64").toString("utf8"));
+        const accepts=quote?.accepts;
+        const resource=new URL(quote?.resource?.url);
+        if(quote?.x402Version===2 && resource.pathname==="/v1/mezo-musd-facts" &&
+           !resource.hash && resource.pathname+resource.search===req.originalUrl &&
+           Array.isArray(accepts)&&accepts.length===1&&
+           accepts[0]?.scheme==="exact" && accepts[0]?.network===NETWORK &&
+           accepts[0]?.payTo?.toLowerCase()===FUNDING_PAYOUT_BASE.toLowerCase() &&
+           accepts[0]?.asset?.toLowerCase()==="0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" &&
+           accepts[0]?.amount==="10000"){
+          res.setHeader("X-Payment-Required",wire);
+          res.setHeader("Access-Control-Expose-Headers",
+            "PAYMENT-REQUIRED,X-Payment-Required,PAYMENT-RESPONSE");
+          res.type("json");
+          return send.call(res,JSON.stringify(quote));
+        }
+      }catch{/* Fail closed to original x402 middleware 402. */}
+    }
+    return send.call(res,body);
+  };
+  next();
+}
 function echoCanonicalAaveBase402(req,res,next){
   const send=res.send;
   res.send=function(body){
@@ -930,6 +988,63 @@ app.get("/v1/tapeout-cpu0-report",async(req,res,next)=>{
 // Free FICTIONAL preview (not an independently verified Aave upgrade alert or
 // bought report). The live paid route queries ONLY fixed original Aave DAO
 // published Base addresses; no arbitrary contracts or RPC proxy endpoint.
+// User-input validation and complete Mezo mainnet read happen entirely before
+// x402 middleware: invalid/unavailable data does not create a payment request.
+app.get("/v1/mezo-musd-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/mezo-musd-sample"||Object.keys(req.query).length||
+     req.get("Content-Length")||req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact free MUSD synthetic sample GET"});
+  return res.status(200).json({
+    ok:true,paid:false,chargedUSDC:"0",exampleOnly:true,
+    kind:"mezo_musd_pinned_erc20_readonly_facts",
+    sourceDataChain:"eip155:31612",fixedContract:MEZO_TOKEN,
+    fixedNttManagerListedByIssuer:MEZO_NTT_MANAGER,
+    illustrativeSymbol:"MUSD",illustrativeDecimals:18,
+    illustrativeSupplyMUSD:"FICTIONAL_EXAMPLE_ONLY",
+    noLiveMezoRpcUsed:true,noWalletKeysOrSigning:true,
+    paymentNetwork:"eip155:8453",asset:"Circle native Base USDC",
+    priceNativeBaseCircleUSDC:"0.010000",payTo:FUNDING_PAYOUT_BASE,
+    paidGET:"/v1/mezo-musd-facts",
+    optionalQuery:"?owner=0x[40 hex]&spender=0x[40 hex] (two public addresses)",
+    disclaimer:"Do not infer token peg, backing, solvency, bridge safety, spender legitimacy, yield or audit assurance from public ERC20 facts."
+  });
+});
+const mezoFactsRateByIP=new Map();
+let mezoFactsInFlight=0;
+app.get("/v1/mezo-musd-facts",async(req,res,next)=>{
+  const check=parseMUSDQuery(req.query);
+  const canonical=check.ok ?
+    "/v1/mezo-musd-facts"+(check.owner===null?"":("?owner="+req.query.owner+"&spender="+req.query.spender)):
+    null;
+  if(!check.ok||req.originalUrl!==canonical||req.get("Content-Length")||req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:check.error||"Only exact GET and two unencoded public owner/spender EVM addresses in order, or no query"});
+  const now=Date.now(),ip=req.ip||"unknown",prior=mezoFactsRateByIP.get(ip);
+  const stats=(!prior||now-prior.start>60000)?{start:now,count:0}:prior;
+  stats.count++;mezoFactsRateByIP.set(ip,stats);
+  if(mezoFactsRateByIP.size>500)for(const [key,v] of mezoFactsRateByIP)if(now-v.start>60000)mezoFactsRateByIP.delete(key);
+  if(stats.count>(process.env.NODE_ENV==="test"?100:3)){
+    res.setHeader("Retry-After","60");
+    return res.status(429).json({ok:false,charged:false,error:"At most three public Mezo observations per minute per IP. No charge."});
+  }
+  if(mezoFactsInFlight>=2)
+    return res.status(503).json({ok:false,charged:false,error:"Read-only Mezo RPC preflight busy; no payment requested"});
+  mezoFactsInFlight++;
+  try{
+    res.locals.mezoMUSDFacts=await readMezoMUSDFacts({owner:check.owner,spender:check.spender});
+    next();
+  }catch{
+    return res.status(503).json({ok:false,charged:false,
+      error:"Complete source-pinned Mezo MUSD contract proof unavailable; no payment requested"});
+  }finally{
+    mezoFactsInFlight=Math.max(0,mezoFactsInFlight-1);
+  }
+},echoCanonicalMezoMUSD402,payment,(_req,res)=>res.status(200).json({
+  ...res.locals.mezoMUSDFacts,ok:true,paid:true,chargedUSDC:"0.01",
+  paymentNetwork:NETWORK,originalVM1PayTo:FUNDING_PAYOUT_BASE,
+  independentPaidCustomerSalesForThisSKU:0,exampleOnly:false,
+  caution:"A pinned Mezo public ERC20 read is not a bridge transaction, token backing/peg proof, counterparty safety or investment advice."
+}));
+
 app.get("/v1/aave-base-proxy-sample",(req,res)=>{
   if(req.originalUrl!=="/v1/aave-base-proxy-sample"||Object.keys(req.query).length||req.get("Content-Length")||req.get("Transfer-Encoding"))
     return res.status(400).json({ok:false,charged:false,error:"Only exact public synthetic preview GET supported"});
@@ -1257,7 +1372,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 21 real configured paid routes, including the new original VM1 wallet-paid NFT permissions ABI decoder
+    const catalog=makeCatalog(origin,routes); // 22 genuine configured paid routes incl original VM1-payable MUSD read-only fact report
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -1271,7 +1386,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==21)throw Error("Incomplete public manifest: expected 20 original resources plus new NFT operator API");
+    if(resources.length!==22)throw Error("Incomplete public manifest: expected 21 prior resources plus new Mezo MUSD fact report");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",

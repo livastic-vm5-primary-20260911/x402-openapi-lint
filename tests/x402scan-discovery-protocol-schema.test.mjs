@@ -11,7 +11,7 @@ test("x402scan payable OpenAPI discovery advertises canonical structured protoco
   const paid=Object.entries(spec.paths).flatMap(([route,verbs])=>
     Object.entries(verbs).filter(([,op])=>op?.["x-payment-info"])
       .map(([method,op])=>({route,method,op})));
-  assert.equal(paid.length,21);
+  assert.equal(paid.length,22);
   for (const {route,method,op} of paid) {
     const meta=op["x-payment-info"];
     assert.deepEqual(meta.protocols,[{x402:{}}],method.toUpperCase()+" "+route+" must be x402scan structured");
@@ -33,11 +33,19 @@ test("structured discovery changes NO actual quoted USD amount, public payees, r
         payTo:op["x-payment-info"].payTo,network:op["x-payment-info"].network,
         asset:op["x-payment-info"].asset,keys:Object.keys(op.responses??{})})));
   const original=JSON.parse(fs.readFileSync(new URL("./fixtures/x402scan-original-merchant-payment-terms-20261024.json",import.meta.url),"utf8"));
-  assert.equal(after.length,original.length);
-  for (const [i,row] of after.entries()){
-    const source=original[i];
-    assert.equal(row.route,source.route);
-    assert.equal(row.method,source.method);
+  assert.equal(after.length,original.length+1);
+  const originalLookup=new Map(original.map(row=>[row.method+" "+row.route,row]));
+  for (const row of after){
+    const source=originalLookup.get(row.method+" "+row.route);
+    if(!source){
+      assert.equal(row.route,"/v1/mezo-musd-facts");
+      assert.equal(row.method,"get");
+      assert.equal(row.priceAmount,"0.01");
+      assert.equal(row.payTo.toLowerCase(),"0x4e3106520e40af30870cafe78da1b1e7110ed98e");
+      assert.equal(row.network,"eip155:8453");
+      assert.equal(row.asset.toLowerCase(),USDC.toLowerCase());
+      continue;
+    }
     assert.equal(row.priceAmount,source.priceAmount);
     assert.equal(row.payTo,source.payTo);
     assert.equal(row.network,source.network);
@@ -46,6 +54,7 @@ test("structured discovery changes NO actual quoted USD amount, public payees, r
     else assert.equal(row.asset.toLowerCase(),USDC.toLowerCase(),
       "Previously omitted native Circle USDC must now be explicit");
   }
+  assert.equal(originalLookup.size,original.length);
 });
 
 test("OpenAPI exposes public contact URL and input guidance without revealing owner Gmail",()=>{

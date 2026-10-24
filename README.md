@@ -482,3 +482,26 @@ same original VM1 MetaMask public receive address
 production x402 facilitator/middleware and without changing any other
 SKU's source code, price or payee. Mock-facilitator tests cost **zero** real
 user funds and are not actual consumer orders.
+
+## 2026-10-25 — Mezo MUSD pinned ERC20 facts x402 developer service
+
+Original DeFi developer observation service, read-only data from issuer-listed
+MUSD token on Mezo mainnet chain ID 31612. Data chain Mezo is DIFFERENT
+from native Circle USDC payment chain Base8453. One original VM1 public
+recipient receives buyer-authorized 0.01 Base USDC via existing x402;
+merchant does not sign, bridge, approve, deposit, swap or spend anything.
+
+Free SYNTHETIC sample: GET /v1/mezo-musd-sample
+Live data behind actual buyer payment: GET /v1/mezo-musd-facts
+Optional public query pair: owner=0x(40hex)&spender=0x(40hex). No arbitrary
+token or RPC host supported. Pinned complete public symbol/decimals/total
+supply and code digest, optional public allowance and balance. Bad request,
+RPC failure, rate limit or concurrency refusal is not charged.
+
+Official source: https://mezo.org/docs/users/resources/contracts-reference
+Implementation: mezo/musd-readonly.mjs
+Unit+integration: tests/mezo-musd-readonly.test.mjs and
+tests/mezo-musd-x402-route.test.mjs. Previous 21 payment routes/payees
+preserved; current catalog contains 22 routes. No independent new
+paying buyer or onchain USDC transfer was verified for this product.
+No backing/peg, solvency, bridge, security or yield promises.
