@@ -302,7 +302,7 @@ The merchant also offers an original, four-venue **public market-data quote comp
 
 ## Free read-only manifest for genuine x402 directories
 
-Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **19 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
+Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **20 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
 
 ## ERC-20 unsigned calldata preflight (new VM1-payee 0.01 USDC product)
 
@@ -379,3 +379,55 @@ NFT Transfer/Approval indexed tokenID layouts are expressly outside
 scope. Do not treat a clean report as a security endorsement. **No
 independent organic customer payments or net profit verified** for
 this new SKU. All other current VM1/VM5 route payouts remain unchanged.
+
+## Read actual native Circle USDC allowance on Base — distinct live read-only x402 API
+
+Our **original fixed-contract on-chain approval allowance API** is a
+different kind of data product from the offline unsigned ERC-20 calldata and
+event-log parsers. It fetches live Base mainnet chain 8453 JSON-RPC
+`eth_chainId`, `eth_blockNumber` and **read-only** `eth_call`
+`allowance(owner,spender)` + `balanceOf(owner)` from the official Circle
+native Base USD Coin contract
+`0x833589fCD6eDb6E08f4C7C32D4f71b54bdA02913`. It reads both values
+at the same pinned public block and returns decimal-safe raw atomic values,
+USDC in exactly six decimal places, an explicit max-uint256 allowance flag,
+and a flag for allowance exceeding the current balance. No private key,
+client secret, token approve, wallet login, swap, bridge, gas or transaction
+submission.
+
+The fully fictional, **zero-charge/no-RPC** math preview:
+
+```bash
+curl -sS https://vm5-openapi-x402.onrender.com/v1/base-usdc-allowance-sample
+```
+
+The **actual LIVE chain-state** endpoint, charge 0.01 native Circle Base USDC
+only after buyer-approved x402 v2 settlement:
+
+```bash
+curl -i 'https://vm5-openapi-x402.onrender.com/v1/base-usdc-allowance?owner=0x1111111111111111111111111111111111111111&spender=0x2222222222222222222222222222222222222222'
+```
+
+Both `owner` and `spender` query parameters (strict public EVM addresses)
+are mandatory as a pair, or both omitted for one known public original
+VM1 example wallet vs `0x…dEaD` spender (a **real** RPC observation, not
+the free fictional fixture). No user-supplied token contracts, networks,
+RPC hosts or client-provided secrets are accepted. Fixed Base RPC primary
+and fallback are source-controlled, with an uncharged HTTP 503 on
+incomplete/rejected data; invalid input is HTTP 400 before payment; free
+sampling is max 3/min/IP and two in-flight.
+
+A genuine paid response includes chain ID, sampled block, actual public
+allowance and current owner balance and risk **flags**, not a security
+certification. Neither an empty allowance nor a large allowance proves
+legitimacy or wrongdoing by a named spender; amounts can change the next
+block and the public RPC source is not a light-client validity proof.
+No verified independent customers exist for this newly launched SKU until
+real distinct settlement receipts prove otherwise.
+
+Buyer settlement is exactly **0.010000 native Circle Base USDC** to the
+same original VM1 MetaMask public receive address
+`0x4e3106520E40af30870caFE78da1B1e7110eD98E`, with the same existing
+production x402 facilitator/middleware and without changing any other
+SKU's source code, price or payee. Mock-facilitator tests cost **zero** real
+user funds and are not actual consumer orders.

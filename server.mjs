@@ -20,6 +20,8 @@ import {validatePublicDomain,auditEmailDns} from "./email-dns-preflight.mjs";
 import {inspectPublicTlsCertificate} from "./public-https-tls-preflight.mjs";
 import {inspectErc20Calldata,DEFAULT_ERC20_CALLDATA} from "./erc20-calldata-preflight.mjs";
 import {decodeUnsignedERC20Event,SYNTHETIC_ERC20_APPROVAL_EVENT} from "./erc20-event-preflight.mjs";
+import {readBaseNativeUsdcAllowance,asAllowanceReport,validateAllowanceQuery,
+  SYNTHETIC_QUERY_OWNER,SYNTHETIC_QUERY_SPENDER} from "./base-usdc-allowance.mjs";
 import {getCurrentTapeoutEvidence,TAPEOUT_PAYOUT,TAPEOUT_PRICE_USDC} from "./tapeout/paid-report.mjs";
 import {getLiveTapeoutStateDiff,DIFF_PRICE_USDC,DIFF_BASELINE_BLOCK} from "./tapeout/diff-report.mjs";
 import {summarizeTapeoutSettlement,TAPEOUT_RECEIPT_PATH} from "./tapeout/settlement-audit.mjs";
@@ -135,6 +137,13 @@ const documentation={
     input:"An optional full set of four public nonsecret 0x hex words (topic0, topic1, topic2, data). No input means explicitly synthetic fixture; partial/invalid input rejected BEFORE payment.",
     freePreview:"GET /v1/erc20-event-sample",
     limitations:"Not a contract identity check, NFT detector, actual onchain event lookup, finality verification, current allowance lookup, token-unit conversion, financial or security audit; zero verified independent paid buyers."
+  },
+  paidBaseCircleAllowance:{
+    method:"GET",path:"/v1/base-usdc-allowance",priceUSDC:"0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT,
+    purpose:"Actual read-only native Circle Base USDC ERC-20 allowance(owner,spender) and balanceOf(owner) at the SAME pinned live Base block, max-uint256 approval and current balance risk flags. No arbitrary token contract, network, or RPC URL.",
+    input:"Optional two PUBLIC wallet addresses owner+spender together, or omit both to observe the owner's known example VM1 wallet versus 0x...dead. Never send seed/private key, signatures, passwords or API tokens.",
+    freePreview:"GET /v1/base-usdc-allowance-sample (wholly FICTIONAL result, NO chain access)",
+    caveat:"The live snapshot may change the next block; a public RPC response is not a security audit, legal certification, authenticated wallet owner, contract legitimacy or guaranteed spender risk. Bad input/failed complete RPC returns 400/503 BEFORE an x402 quote, zero confirmed new customers."
   },
   paidCsv:{method:"POST",path:"/v1/csv-preflight",priceUSDC:"0.005",network:NETWORK,
     purpose:"RFC4180-style CSV structural preflight for real buyer CSV bytes. Returns row/column counts, duplicate rows, type mismatches, missing cells and formula injection warnings; never echoes raw row cells or persists uploaded CSV.",
@@ -265,6 +274,25 @@ const routes={
         fieldsCompared:20,changeCount:1,unchangedCount:19,
         changes:[{field:"market.nextListingId",label:"Next market listing ID",before:"3",after:"4"}],
         exampleOnly:true,newIndependentPaidCustomersForDiff:0
+      }}
+    })
+  },
+  "GET /v1/base-usdc-allowance":{
+    accepts:{scheme:"exact",price:"$0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT},
+    description:"Real current read-only Circle native USDC allowance and owner balance on Base mainnet 8453 at one pinned block; fixed token contract only, sender-provided 2 public EVM addresses or default public example. Max uint256 and allowance greater than current balance warnings. All bad inputs and incomplete RPC fail before payment, no wallet connection or signing. Not a smart-contract or spender safety audit.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
+        kind:"base_native_circle_usdc_readonly_allowance_snapshot",
+        tokenContract:"0x833589fCD6eDb6E08f4C7C32D4f71b54bdA02913",chainId:8453,
+        ownerAddress:"0x1111111111111111111111111111111111111111",
+        spenderAddress:"0x2222222222222222222222222222222222222222",
+        allowanceUSDC:"100.000000",ownerBalanceUSDC:"1.150000",
+        observedBlockNumber:53029536,isUnlimitedMaxUint256:false,
+        allowanceExceedsCurrentBalance:true,calledOnlyReadMethods:true,
+        exampleOnly:true,independentPaidBuyersVerified:0,
+        fictitiousExampleWarning:"This is a fully fictitious example, NOT a current allowance or actual paid x402 delivery."
       }}
     })
   },
@@ -1084,6 +1112,59 @@ app.get("/v1/erc20-event-preflight",(req,res,next)=>{
   disclosure:"No real chain/RPC checked, no proof that an event was actually emitted, and no token contract or spender allowance certified. Caller alone authorizes x402 payment."
 }));
 
+// Genuine live RPC Base8453 Circle native USDC allowance; NO transaction/approval.
+app.get("/v1/base-usdc-allowance-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/base-usdc-allowance-sample" ||
+     req.get("Content-Length") || req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact GET free fictional demo without parameters or body"});
+  const sample=asAllowanceReport({
+    owner:"0x1111111111111111111111111111111111111111",
+    spender:"0x2222222222222222222222222222222222222222",
+    block:53029536,
+    allowanceWord:"0x"+(100000000n).toString(16).padStart(64,"0"),
+    balanceWord:"0x"+(1150000n).toString(16).padStart(64,"0"),
+    rpcSource:"FICTIONAL_NO_RPC_USED"
+  });
+  return res.status(200).json({...sample,paid:false,chargedUSDC:"0",exampleOnly:true,
+    illustrationNotAnOnchainObservation:true,
+    paidEndpoint:"GET /v1/base-usdc-allowance?owner=0x...&spender=0x...",
+    paidPriceNativeCircleBaseUSDC:"0.01",payTo:TAPEOUT_PAYOUT,
+    disclosure:"Wholly fictional math illustration. No actual allowance, token balance, RPC, key, payment or onchain event was queried."});
+});
+const baseAllowanceRates=new Map();
+let baseAllowanceInFlight=0;
+app.get("/v1/base-usdc-allowance",async(req,res,next)=>{
+  const check=validateAllowanceQuery(req.query);
+  if(!check.ok || req.originalUrl.length>170 ||
+     req.get("Content-Length") || req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:check.error||"Invalid public owner/spender pair or body"});
+  const at=Date.now(),key=req.ip,existing=baseAllowanceRates.get(key);
+  const rate=(!existing||at-existing.start>=60000)?{start:at,count:0}:existing;
+  rate.count++;baseAllowanceRates.set(key,rate);
+  if(baseAllowanceRates.size>500)for(const [k,entry] of baseAllowanceRates)if(at-entry.start>=60000)baseAllowanceRates.delete(k);
+  if(rate.count>(process.env.NODE_ENV==="test"?100:3)){
+    res.setHeader("Retry-After","60");
+    return res.status(429).json({ok:false,charged:false,error:"Up to three public read-only allowance reads per minute per client IP"});
+  }
+  if(baseAllowanceInFlight>=2)
+    return res.status(503).json({ok:false,charged:false,error:"Read-only Base RPC concurrency limit; no payment requested"});
+  baseAllowanceInFlight++;
+  try{
+    res.locals.liveCircleBaseAllowance=await readBaseNativeUsdcAllowance(check.owner,check.spender);
+    res.locals.isPublicOwnerSample=check.demoParameters;
+    next();
+  }catch{
+    return res.status(503).json({ok:false,charged:false,error:"Fixed native Base USDC RPC snapshot unavailable or inconsistent; no x402 payment requested"});
+  }finally{baseAllowanceInFlight=Math.max(0,baseAllowanceInFlight-1);}
+},mirrorCanonicalVM1Erc20Quote,payment,(_req,res)=>res.status(200).json({
+  ...res.locals.liveCircleBaseAllowance,
+  paid:true,chargedUSDC:"0.01",paymentNetwork:NETWORK,
+  originalVM1PayoutAddress:TAPEOUT_PAYOUT,
+  publicDefaultAddressPair:res.locals.isPublicOwnerSample,
+  independentBuyerPurchasesProvenForThisRoute:0,
+  warning:"The x402 middleware verifies buyer authorization. Public RPC read-only data is not wallet risk certification, owner verification, or a token approval, and could change next block."
+}));
+
 app.get("/v1/x402-template",validateOptionalTemplateFormat,echoCanonicalX402ChallengeOnTemplate,payment,(_req,res)=>res.status(200).json({
   ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
   kind:"x402_v2_openapi_starter",templateFormat:"YAML",openapiTemplate:paymentTemplate,
@@ -1111,7 +1192,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 19 actually configured paid routes, including VM1 ERC20 calldata preflight
+    const catalog=makeCatalog(origin,routes); // 20 actually configured paid routes, including original VM1 live Circle allowance snapshot
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -1125,7 +1206,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==19)throw Error("Incomplete public manifest");
+    if(resources.length!==20)throw Error("Incomplete public manifest");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",

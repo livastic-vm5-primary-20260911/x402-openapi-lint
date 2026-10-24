@@ -137,9 +137,9 @@ test('Existing x402 product prices and original VM5 merchant payee remain invari
  assert.equal(ping.accepts[0].payTo.toLowerCase(),OLD_PAYTO);
 });
 
-test('OpenAPI and discovery advertise two unchanged TapeOut products plus one new funding product and 19 paid resources',()=>{
+test('OpenAPI and discovery advertise two unchanged TapeOut products plus one new funding product and 20 paid resources',()=>{
  const {spec,wellKnown}=makeDiscovery('https://vm5-openapi-x402.onrender.com');
- assert.equal(wellKnown.resources.length,19);
+ assert.equal(wellKnown.resources.length,20);
  assert.ok(wellKnown.resources.includes('https://vm5-openapi-x402.onrender.com/v1/tapeout-cpu0-report'));
  const t=spec.paths['/v1/tapeout-cpu0-report'].get;
  assert.equal(t['x-payment-info'].payTo.toLowerCase(),TAPEOUT_PAYOUT.toLowerCase());

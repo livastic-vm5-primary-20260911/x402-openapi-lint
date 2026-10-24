@@ -32,11 +32,22 @@ const receiptRpc=http.createServer((req,res)=>{
     let d;
     try { d=JSON.parse(Buffer.concat(pieces).toString()); } catch {d=null;}
     const method=d?.method;
-    const allowed=["eth_chainId","eth_blockNumber","eth_getTransactionReceipt"];
+    const allowed=["eth_chainId","eth_blockNumber","eth_getTransactionReceipt","eth_call"];
     if(!allowed.includes(method)){res.statusCode=403;res.end(JSON.stringify({error:"Unapproved RPC"}));return;}
     let result;
     if(method==="eth_chainId")result="0x2105";
     else if(method==="eth_blockNumber")result="0x111";
+    else if(method==="eth_call"){
+      const [call,blockTag]=d.params||[];
+      const sel=call?.data?.slice(0,10);
+      const contract="0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+      if(!call||call.to?.toLowerCase()!==contract||blockTag!=="0x111"||
+         !["0xdd62ed3e","0x70a08231"].includes(sel)){
+        res.end(JSON.stringify({jsonrpc:"2.0",id:d.id,error:{code:3,message:"Invalid fixed test-only token call"}}));return;
+      }
+      const value=sel==="0xdd62ed3e"?100000000n:1150000n;
+      result="0x"+value.toString(16).padStart(64,"0");
+    }
     else {
       const tx=d?.params?.[0];
       if(tx===FIXTURE_TX){
@@ -55,7 +66,7 @@ const receiptRpc=http.createServer((req,res)=>{
           logs:[fixtureUSDCEvent(FIXTURE_SENDER,FIXTURE_RECEIVER,4_000_000)]};
       }else{result=null;}
     }
-    res.end(JSON.stringify({jsonrpc:"2.0",id:1,result}));
+    res.end(JSON.stringify({jsonrpc:"2.0",id:d.id,result}));
   });
 });
 receiptRpc.listen(0,"127.0.0.1");
@@ -186,7 +197,7 @@ async function ready() {
 let code=1;
 try{
   await ready();
-  const tests=spawn(process.execPath,["--test","tests/x402-public-manifest-for-free-directory.test.mjs","tests/erc20-calldata-preflight.test.mjs","tests/erc20-calldata-paid-route.test.mjs","tests/erc20-event-preflight.test.mjs","tests/erc20-event-paid-route.test.mjs","tests/funding-four-venue.test.mjs","tests/funding-x402-challenge-body-compat.test.mjs","tests/aave-proxy1967.test.mjs","tests/aave-base-x402-route.test.mjs","tests/tapeout-diff-paid-route.test.mjs","tests/catalog-readonly.test.mjs","tests/lint.test.mjs","tests/base-usdc-receipt.test.mjs","tests/base-rpc-fallback.test.mjs","tests/discovery-marketplace-interop.test.mjs","tests/glb-analyzer.test.mjs","tests/glb-paid-route.test.mjs","tests/procedural-lowpoly-generator.test.mjs","tests/lowpoly-paid-route.test.mjs","tests/bazaar-cdp-validations.test.mjs","tests/first-actual-independent-sale.test.mjs","tests/csv-preflight.test.mjs","tests/csv-paid-route.test.mjs","tests/invoice-reconcile.test.mjs","tests/invoice-paid-route.test.mjs","tests/quote-preflight.test.mjs","tests/quote-paid-route.test.mjs","tests/email-dns-preflight.test.mjs","tests/email-dns-paid-route.test.mjs","tests/public-https-tls-preflight.test.mjs","tests/tls-certificate-paid-route.test.mjs","tests/llms-discoverability.test.mjs","tests/lumen-free-game-route.test.mjs","tests/x402-paid-ping001.test.mjs","tests/true402-merchant-manifest.test.mjs","tests/workflow-risk-paid-route.test.mjs","tests/tapeout-xlayer-paid-route.test.mjs","tests/tapeout-settlement-audit.test.mjs","tests/tapeout-core.test.mjs","tests/tapeout-rpc.test.mjs"],{cwd:new URL("../",import.meta.url),env,stdio:"inherit"});
+  const tests=spawn(process.execPath,["--test","tests/x402-public-manifest-for-free-directory.test.mjs","tests/erc20-calldata-preflight.test.mjs","tests/erc20-calldata-paid-route.test.mjs","tests/erc20-event-preflight.test.mjs","tests/erc20-event-paid-route.test.mjs","tests/base-native-usdc-allowance.test.mjs","tests/base-native-usdc-allowance-paid-route.test.mjs","tests/funding-four-venue.test.mjs","tests/funding-x402-challenge-body-compat.test.mjs","tests/aave-proxy1967.test.mjs","tests/aave-base-x402-route.test.mjs","tests/tapeout-diff-paid-route.test.mjs","tests/catalog-readonly.test.mjs","tests/lint.test.mjs","tests/base-usdc-receipt.test.mjs","tests/base-rpc-fallback.test.mjs","tests/discovery-marketplace-interop.test.mjs","tests/glb-analyzer.test.mjs","tests/glb-paid-route.test.mjs","tests/procedural-lowpoly-generator.test.mjs","tests/lowpoly-paid-route.test.mjs","tests/bazaar-cdp-validations.test.mjs","tests/first-actual-independent-sale.test.mjs","tests/csv-preflight.test.mjs","tests/csv-paid-route.test.mjs","tests/invoice-reconcile.test.mjs","tests/invoice-paid-route.test.mjs","tests/quote-preflight.test.mjs","tests/quote-paid-route.test.mjs","tests/email-dns-preflight.test.mjs","tests/email-dns-paid-route.test.mjs","tests/public-https-tls-preflight.test.mjs","tests/tls-certificate-paid-route.test.mjs","tests/llms-discoverability.test.mjs","tests/lumen-free-game-route.test.mjs","tests/x402-paid-ping001.test.mjs","tests/true402-merchant-manifest.test.mjs","tests/workflow-risk-paid-route.test.mjs","tests/tapeout-xlayer-paid-route.test.mjs","tests/tapeout-settlement-audit.test.mjs","tests/tapeout-core.test.mjs","tests/tapeout-rpc.test.mjs"],{cwd:new URL("../",import.meta.url),env,stdio:"inherit"});
   const [exit]=await once(tests,"close");
   code=exit??1;
 } catch(e){console.error(e.stack||e);code=1;}

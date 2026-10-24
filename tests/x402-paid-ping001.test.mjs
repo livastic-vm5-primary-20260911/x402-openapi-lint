@@ -90,7 +90,7 @@ test("Synthetic invalid test signature cannot unlock handler or claim payment",a
 });
 test("Exactly ONE new paid resource in public discovery, does not change older prices or free sample",()=>{
  const {spec,wellKnown}=makeDiscovery("https://vm5-openapi-x402.onrender.com");
- assert.equal(wellKnown.resources.length,19);
+ assert.equal(wellKnown.resources.length,20);
  assert.ok(wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com/v1/ping"));
  const op=spec.paths["/v1/ping"].get;
  assert.equal(op["x-payment-info"].price.amount,"0.001");

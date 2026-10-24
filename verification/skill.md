@@ -40,7 +40,7 @@ The seller previously verified only two separate historical paid deliveries **by
 Free fictional preview: GET https://vm5-openapi-x402.onrender.com/v1/btc-funding-sample
 Paid exact GET: https://vm5-openapi-x402.onrender.com/v1/btc-funding-four-venues, 0.01 native Circle Base8453 USDC via x402 v2 to original VM1 0x4e3106520E40af30870caFE78da1B1e7110eD98E. Real-time upstream checks use Binance/Bybit/OKX/Bitget public data; a source error/stale data returns 503 BEFORE x402 payment requirement; no partial paid data. Quotes are not yields, forecasts, advice or actual arbitrage executions. Different funding intervals disclosed. This new SKU has zero proven independent paying buyers. No credential, wallet connection, trade or principal required to inspect the free preview.
 
-Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 19 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
+Free x402 v2 publisher object manifest for independent API catalogs: GET https://vm5-openapi-x402.onrender.com/.well-known/x402-bazaar-manifest.json. It declares exactly 20 true payment-gated endpoints, their actual 0.001–0.20 native Base Circle USDC prices and original VM1 or VM5 public payTo addresses; no credentials, wallet connection, listing fees, fake transactions or implied sales. The older /.well-known/x402.json string URL list is preserved.
 
 New **0.01 USDC** original-VM1-paid bounded developer endpoint:
 `GET https://vm5-openapi-x402.onrender.com/v1/erc20-calldata-preflight`
@@ -62,3 +62,17 @@ payment, detects uint256-max Approval and zero addresses. Free public
 fictional preview `/v1/erc20-event-sample`. No RPC, wallet, signing,
 contract validation or audit; no verified outside paid customer yet.
 PayTo original VM1 public receive-only address, existing SKU payees intact.
+
+Distinct original live read-only Base native Circle USDC allowance SKU
+`GET https://vm5-openapi-x402.onrender.com/v1/base-usdc-allowance`
+costs **0.01 actual Base Circle USDC** via buyer-controlled x402 to the
+existing original owner's VM1 EVM public receive-only address. Supply
+`owner` AND `spender` (two public 0x40hex EVM addresses), or neither
+(defaults to original VM1 public wallet and illustrative dead spender).
+Reads chain8453 `allowance` plus `balanceOf` at one pinned live block
+through fixed RPCs, no wallet signing or state changes; status400/503/429
+are issued BEFORE the x402 paywall, no successful HTTP200 or expense implied.
+Completely free fictional example `/v1/base-usdc-allowance-sample`
+requires no chain RPC. Flags max(uint256) allowance and exceeds-current
+USDC balance; NOT spender legitimacy, contract audit, future balance,
+actual token approval, trading, or proof of a real paid buyer.

@@ -20,6 +20,7 @@ export function makeDiscovery(origin) {
   const receiptEndpoint=origin+"/v1/base-usdc-receipt";
   const erc20Endpoint=origin+"/v1/erc20-calldata-preflight";
   const erc20EventEndpoint=origin+"/v1/erc20-event-preflight";
+  const baseCircleAllowanceEndpoint=origin+"/v1/base-usdc-allowance";
   const glbEndpoint=origin+"/v1/analyze-glb";
   const lowpolyEndpoint=origin+"/v1/generate-lowpoly";
   const csvReportEndpoint=origin+"/v1/csv-report";
@@ -83,10 +84,10 @@ export function makeDiscovery(origin) {
       "/skill.md":{get:{summary:"Free buyer-facing x402 agent skill, TapeOut VM1 payout and public sample",operationId:"readX402AgentSkill",security:[],responses:{"200":{description:"Public Markdown client guide; no wallet/payment required."}}}},
       "/llms.txt":{get:{summary:"Free machine-readable API guide",operationId:"readMachineApiGuide",security:[],responses:{"200":{description:"Public plain-text tool, prices, samples and source links; no wallet/payment required."}}}},
       "/.well-known/x402-bazaar-manifest.json":{get:{
-        summary:"Free publisher x402 v2 object manifest with all 19 actual paid resources and their true prices/payTo",
+        summary:"Free publisher x402 v2 object manifest with all 20 actual paid resources and their true prices/payTo",
         operationId:"readProviderManifestForPublicX402Directories",
         security:[],
-        description:"Public read-only manifest whose 19 resource objects have a specific URL, method, meaningful description and on-chain Base native Circle USDC payment accepts[] built from the same x402 middleware configuration. No customer, wallet, payment, listing approval, external redirects or secrets.",
+        description:"Public read-only manifest whose 20 resource objects have a specific URL, method, meaningful description and on-chain Base native Circle USDC payment accepts[] built from the same x402 middleware configuration. No customer, wallet, payment, listing approval, external redirects or secrets.",
         responses:{"200":{description:"Provider-owned, no-charge x402 v2 seller manifest."},
           "400":{description:"Invalid public Host/query/body; no merchant payment."}}
       }},
@@ -272,6 +273,47 @@ export function makeDiscovery(origin) {
           "402":{description:"Exact 5000 atomic native Circle Base USDC payment required.",headers:{"PAYMENT-REQUIRED":{schema:{type:"string"}}}},
           "404":{description:"No public domain DNS records found; rejected without payment."},
           "503":{description:"Resolver temporary error; no payment requirement."}
+        }
+      }},
+      "/v1/base-usdc-allowance-sample":{get:{
+        tags:["DeFi Public Chain State"],operationId:"previewFictionalBaseCircleUSDCAllowance",
+        summary:"FREE fictional USDC wallet approval risk example: no real chain or user wallet read",security:[],
+        responses:{"200":{description:"Explicitly fictional fixture, no RPC and no x402 payment."},
+         "400":{description:"Unexpected query/body; unpaid."}}
+      }},
+      "/v1/base-usdc-allowance":{get:{
+        tags:["DeFi Public Chain State"],
+        operationId:"readNativeCircleBaseUSDCWalletAllowanceAfterPayment",
+        summary:"Real Base native Circle USDC allowance(owner,spender) and balance at ONE current block for 0.01 Base USDC",
+        security:[{x402Payment:[]}],
+        description:"READ-ONLY fixed native Circle Base8453 USDC contract allowance(owner,spender) and balanceOf(owner) at the same current block. Unlike static calldata/event tools, queries genuine chain state (fixed 2 source-controlled public RPC hosts only); failure 503 before charging. Strict owner+spender as one optional pair of publicly known 20-byte EVM addresses; omitted pair uses actual owner's public VM1 address and fictional burner spender as a LIVE demo query. No signing, token approval, private key, user RPC URL or arbitrary contract. Max-uint256, allowance>balance risk notes. Not onchain safety certification.",
+        "x-payment-info":{network:"eip155:8453",price:{mode:"fixed",currency:"USD",amount:"0.01"},payTo:TAPEOUT_PAYOUT},
+        parameters:["owner","spender"].map(name=>({name,in:"query",required:false,
+          description:"Provide both owner and spender public EVM 0x+40hex addresses, or omit both to query a public example pair.",
+          schema:{type:"string",pattern:"^0x[0-9a-fA-F]{40}$"}})),
+        responses:{
+          "200":{description:"After a genuine buyer-authorized x402 payment, a complete read-only pinned-block USDC allowance+balance snapshot; no economic/security guarantee.",
+            content:{"application/json":{schema:{type:"object",
+              required:["ok","paid","chargedUSDC","kind","chainId","ownerAddress","spenderAddress","allowanceAtomic","allowanceUSDC","ownerBalanceUSDC","observedBlockNumber","isUnlimitedMaxUint256","allowanceExceedsCurrentBalance","calledOnlyReadMethods","originalVM1PayoutAddress"],
+              properties:{
+                ok:{type:"boolean",const:true},paid:{type:"boolean",const:true},
+                chargedUSDC:{type:"string",const:"0.01"},
+                kind:{type:"string",const:"base_native_circle_usdc_readonly_allowance_snapshot"},
+                chainId:{type:"integer",const:8453},
+                ownerAddress:{type:"string"},spenderAddress:{type:"string"},
+                allowanceAtomic:{type:"string"},allowanceUSDC:{type:"string"},
+                ownerBalanceUSDC:{type:"string"},
+                observedBlockNumber:{type:"integer",minimum:1},
+                isUnlimitedMaxUint256:{type:"boolean"},
+                allowanceExceedsCurrentBalance:{type:"boolean"},
+                calledOnlyReadMethods:{type:"boolean",const:true},
+                originalVM1PayoutAddress:{type:"string",const:TAPEOUT_PAYOUT}
+              }
+            }}}},
+          "400":{description:"Invalid or incomplete owner/spender address query, no payment."},
+          "402":{description:"Exact 10000 atomic native Circle USDC eip155:8453 to original VM1 MetaMask."},
+          "429":{description:"Pre-payment server-side quota; no charge."},
+          "503":{description:"Upstream chain evidence failed before paywall; no charge."}
         }
       }},
       "/v1/erc20-event-sample":{get:{
@@ -541,7 +583,7 @@ export function makeDiscovery(origin) {
   const wellKnown={
     version:1,
     discoveryApi:origin+"/discovery/resources",
-    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint,fundingEndpoint,origin+"/v1/aave-base-proxy-facts",erc20Endpoint,erc20EventEndpoint],
+    resources:[endpoint,templateEndpoint,receiptEndpoint,glbEndpoint,lowpolyEndpoint,csvReportEndpoint,csvPreflightEndpoint,invoiceEndpoint,workflowRiskEndpoint,x402QuoteEndpoint,emailDnsEndpoint,httpsCertEndpoint,pingEndpoint,tapeoutCpu0Endpoint,tapeoutDiffEndpoint,fundingEndpoint,origin+"/v1/aave-base-proxy-facts",erc20Endpoint,erc20EventEndpoint,baseCircleAllowanceEndpoint],
     instructions:"New ORIGINAL-VM1-paid Aave V3 Base pinned ERC1967 Pool / PoolConfigurator read-only public storage facts, 0.01 native Circle BaseUSDC GET /v1/aave-base-proxy-facts, free illustrative GET /v1/aave-base-proxy-sample, no security audit/governance certification and no new customers proven. New independent 0.01 native Circle Base USDC GET /v1/btc-funding-four-venues requires four actual BTCUSDT perp funding quotes from distinct public exchanges (Binance/Bybit/OKX/Bitget with regional MEXC/Gate.io replacements) before payment and sends its ONLY new-SKU payout to original VM1 wallet; free synthetic GET /v1/btc-funding-sample, NO verified buyers or trading. NEW 0.001 native Base Circle USDC GET /v1/ping is a real paid x402 v2 GET for outside buyer signed-settled middleware integrations, 0 new paid independent users at initial publication. Free /health remains no charge. New $0.005 HTTPS certificate trust/expiry preflight GET /v1/https-cert-preflight and free fictional /v1/tls-certificate-sample, only bounded public IPv4 pinned TLS, no HTTP/SMTP and NO verified paid orders yet. New 0.005 Base native CircleUSDC public email DNS MX/SPF/DMARC check GET /v1/email-dns-preflight and free illustrative /v1/email-dns-sample; no verified buyer for this new route, DNS errors before charging. New 0.01 Base native CircleUSDC GET /v1/x402-preflight reviews public unsigned x402 v2 402 quotes without network fetch or signed data; free GET /v1/x402-sample, source original same-owner VM3 adapted by VM5. Buyer demand for CSV structural preflight observed in public NoHumans search logs. New 0.005 Base native USDC GET /v1/csv-report returns one full reproducible synthetic anomaly pack, POST /v1/csv-preflight audits <=32KB buyer CSV in memory. Invalid inputs rejected BEFORE charge. Paid GET /v1/generate-lowpoly generates an AI-assisted as-is non-exclusive original GLB binary for 0.05 Base Circle USDC, default lantern seed0. POST /v1/analyze-glb reviews GLB metadata for 0.01USDC. GET /v1/x402-template serves an API starter 0.01USDC, POST /v1/lint analyzes OpenAPI 0.01USDC, GET /v1/base-usdc-receipt verifies a public Base native Circle USDC Transfer 0.005USDC. Inputs validated before any charge. GET /v1/lowpoly-sample and /v1/glb-sample free. AI-assisted source public, no exclusive IP claim. Two historic separate paid template and CSV receipts total 0.015 native BaseUSDC from the SAME NoHumans automated scout; no additional new route sales proven.",
     claim:"Discovery is NOT payment. Two separately settled and delivered actual native BaseUSDC x402 receipts: template 0.01 and CSV 0.005 to SAME external NoHumans scout on 2026-10-19. See free GET /v1/sales-proof; all remaining routes including email DNS have zero confirmed buyer purchases."
   };
