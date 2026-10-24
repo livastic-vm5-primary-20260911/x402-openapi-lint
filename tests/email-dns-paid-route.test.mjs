@@ -58,7 +58,7 @@ test("new paid route appears in public OpenAPI discovery and nine-resource x402 
  const d=makeDiscovery("https://vm5-openapi-x402.onrender.com");
  assert.equal(d.spec.paths["/v1/email-dns-preflight"].get["x-payment-info"].price.amount,"0.005");
  assert.equal(d.spec.paths["/v1/email-dns-sample"].get.security.length,0);
- assert.equal(d.wellKnown.resources.length,17);
+ assert.equal(d.wellKnown.resources.length,18);
  assert.ok(d.wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com/v1/email-dns-preflight"));
 });
 

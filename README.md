@@ -302,4 +302,43 @@ The merchant also offers an original, four-venue **public market-data quote comp
 
 ## Free read-only manifest for genuine x402 directories
 
-Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **16 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
+Public `GET /.well-known/x402-bazaar-manifest.json` returns an x402Version 2 document with **18 actual paid resource objects** (`url`, `resource`, `method`, `description`, `accepts[]`), assembled from the same middleware as the live APIs. This is usable as a manifest URL in no-fee x402 directories (such as the independent [Agent Bazaar publishing guide](https://bazaar.saylorinnovations.com/publish/)). It does not touch user wallet keys, paid middleware or existing catalog `/.well-known/x402.json` legacy string URLs. Directory acceptance and real buyer purchases require separate evidence; neither is implied by this file.
+
+## ERC-20 unsigned calldata preflight (new VM1-payee 0.01 USDC product)
+
+Original, strictly offline decode of **public unsigned** ERC-20 ABI calldata. Unlike our
+live receipt checker, this product requires **no RPC** and makes **no network or wallet calls**.
+It accepts `transfer`, `approve`, `transferFrom` and the common
+`increaseAllowance` / `decreaseAllowance` ABI selectors, converts raw uint256
+amounts without guessing token decimals, and flags a zero address or
+`approve(spender, type(uint256).max)`. It does **not** confirm that a target
+contract supports that method, holds real balances, or is safe. It never
+requests a seed, token approval, MetaMask connection, or private signing key.
+
+A completely free fictional preview (no payment, no wallet, no claims of buyers):
+
+```bash
+curl -sS https://vm5-openapi-x402.onrender.com/v1/erc20-calldata-sample
+```
+
+Paid independent buyer use: `GET /v1/erc20-calldata-preflight?calldata=0x...`
+with an optional URL-encoded, **nonsecret and unsigned** canonical ABI hex string
+(max 202 characters). Omitting `calldata` decodes the same expressly synthetic
+sample after the buyer's payment. Invalid input, unknown method selectors,
+noncanonical address padding and unrecognised query/body fields return HTTP
+400 **before** issuing an x402 payment requirement.
+
+An unpaid request to the exact paid route produces the canonical x402 v2
+`PAYMENT-REQUIRED` challenge (also mirrored verbatim in a JSON 402 body for
+older agent directories). A genuinely authorized buyer obtains a structured
+JSON report after x402 middleware settlement. The fixed price is **0.010000
+native Circle USDC on Base mainnet 8453 per paid GET**; the recipient is
+the original **VM1** user MetaMask public address
+`0x4e3106520E40af30870caFE78da1B1e7110eD98E`. Existing independent
+VM5 merchant SKUs and their existing payment recipients were not changed.
+
+This service is a convenience preflight for developers, not blockchain
+simulation, an ERC20 allowance query, identity verification, financial
+advice, or a security audit. No organic buyers, paid calls, or cash for
+this new route have been proven at publication. Local test fixtures
+mock the facilitator and do **not** spend real tokens.

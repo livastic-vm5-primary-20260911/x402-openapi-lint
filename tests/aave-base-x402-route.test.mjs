@@ -44,7 +44,7 @@ test('Only the single new paid GET is advertised at exact genuine Circle Base US
  const response=await fetch(BASE+'/.well-known/x402-bazaar-manifest.json');
  assert.equal(response.status,200);
  const manifest=await response.json();
- assert.equal(manifest.resources.length,17);
+ assert.equal(manifest.resources.length,18);
  const matches=manifest.resources.filter(x=>x.url===BASE+'/v1/aave-base-proxy-facts');
  assert.equal(matches.length,1);
  const a=matches[0];

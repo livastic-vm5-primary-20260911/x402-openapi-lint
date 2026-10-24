@@ -18,6 +18,7 @@ import {inspectWorkflow,PUBLIC_SYNTHETIC_YAML,MAX_INPUT_BYTES as WORKFLOW_MAX_BY
 import {parsePublicQuote,evaluatePublicQuote,EXAMPLE_QUOTE,VERSION as VM3_QUOTE_VERSION} from "./quote-preflight.mjs";
 import {validatePublicDomain,auditEmailDns} from "./email-dns-preflight.mjs";
 import {inspectPublicTlsCertificate} from "./public-https-tls-preflight.mjs";
+import {inspectErc20Calldata,DEFAULT_ERC20_CALLDATA} from "./erc20-calldata-preflight.mjs";
 import {getCurrentTapeoutEvidence,TAPEOUT_PAYOUT,TAPEOUT_PRICE_USDC} from "./tapeout/paid-report.mjs";
 import {getLiveTapeoutStateDiff,DIFF_PRICE_USDC,DIFF_BASELINE_BLOCK} from "./tapeout/diff-report.mjs";
 import {summarizeTapeoutSettlement,TAPEOUT_RECEIPT_PATH} from "./tapeout/settlement-audit.mjs";
@@ -118,6 +119,14 @@ const documentation={
     },
     purpose:"Read-only Circle native Base USDC receipt proof with 12-block confirmation gate, net token Transfer logs, strict optional sender, exact integer decimals.",
     caveat:"Successful Transfer log is not invoice settlement, buyer intent, a security audit or proof of account ownership. Invalid/failed/unconfirmed receipts are rejected BEFORE payment."
+  },
+  paidErc20Calldata:{
+    method:"GET",path:"/v1/erc20-calldata-preflight",priceUSDC:"0.01",network:NETWORK,
+    payTo:TAPEOUT_PAYOUT,
+    purpose:"Decode original unsigned canonical ERC-20 transfer/approve/transferFrom/increaseAllowance/decreaseAllowance ABI calldata, flag unlimited allowance and zero address. Entirely offline, no wallet/chain calls.",
+    input:"One optional nonsecret public calldata hex up to 202 characters; default is an explicitly synthetic approve(maxUint256) example.",
+    freePreview:"GET /v1/erc20-calldata-sample",
+    limitations:"NOT token-contract verification, onchain allowance, simulation, security certification or transaction authorization. No real third-party buyer of this new product verified."
   },
   paidCsv:{method:"POST",path:"/v1/csv-preflight",priceUSDC:"0.005",network:NETWORK,
     purpose:"RFC4180-style CSV structural preflight for real buyer CSV bytes. Returns row/column counts, duplicate rows, type mismatches, missing cells and formula injection warnings; never echoes raw row cells or persists uploaded CSV.",
@@ -248,6 +257,21 @@ const routes={
         fieldsCompared:20,changeCount:1,unchangedCount:19,
         changes:[{field:"market.nextListingId",label:"Next market listing ID",before:"3",after:"4"}],
         exampleOnly:true,newIndependentPaidCustomersForDiff:0
+      }}
+    })
+  },
+  "GET /v1/erc20-calldata-preflight":{
+    accepts:{scheme:"exact",price:"$0.01",network:NETWORK,payTo:TAPEOUT_PAYOUT},
+    description:"Offline read-only decode of canonical public unsigned ERC-20 transfer/approve/transferFrom/increaseAllowance/decreaseAllowance calldata, including unlimited-allowance and zero-address flags. Strict parser rejects bad input BEFORE an x402 payment. Payment directly to original one-owner VM1 MetaMask on Base; does not interact with chain, a signing wallet, or a token contract. Not a security certification.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{
+        ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
+        kind:"evm_erc20_unsigned_calldata_preflight",
+        selector:"0x095ea7b3",method:"approve",
+        decoded:{spender:"0x000000000000000000000000000000000000dead",amountAtomic:"115792089237316195423570985008687907853269984665640564039457584007913129639935"},
+        allowanceUnlimited:true,warningCount:1,noWalletOrBlockchainUsed:true,
+        tokenContractKnown:false,exampleOnly:true
       }}
     })
   },
@@ -937,6 +961,64 @@ app.get("/v1/tapeout-cpu0-diff",async(req,res,next)=>{
   independentOutsideBuyersForThisNewSKU:0,
   disclosure:"The payment-gated response contains public RPC differences, not independent chain finality, independent buyer identity, a certified audit or an investment signal."
 }));
+// Dedicated new VM1-payee developer service: decode without chain/signing.
+function mirrorCanonicalVM1Erc20Quote(_req,res,next){
+  const send=res.send;
+  res.send=function(body){
+    const wire=res.getHeader("PAYMENT-REQUIRED");
+    if(res.statusCode===402 && typeof wire==="string" && wire.length<20000){
+      try{
+        const q=JSON.parse(Buffer.from(wire,"base64").toString("utf8"));
+        const a=q?.accepts;
+        if(q?.x402Version===2 && Array.isArray(a) && a.length===1 &&
+           a[0]?.scheme==="exact" && a[0]?.network===NETWORK &&
+           a[0]?.payTo?.toLowerCase()===TAPEOUT_PAYOUT.toLowerCase() &&
+           a[0]?.asset?.toLowerCase()==="0x833589fcd6edb6e08f4c7c32d4f71b54bdA02913".toLowerCase() &&
+           a[0]?.amount==="10000" && a[0]?.extra?.name==="USD Coin"){
+          res.setHeader("X-Payment-Required",wire);
+          res.setHeader("Access-Control-Expose-Headers","PAYMENT-REQUIRED,X-Payment-Required,PAYMENT-RESPONSE");
+          res.type("json");
+          return send.call(res,JSON.stringify(q));
+        }
+      }catch{ /* fail closed to untouched canonical middleware quote */ }
+    }
+    return send.call(res,body);
+  };
+  next();
+}
+app.get("/v1/erc20-calldata-sample",(req,res)=>{
+  if(req.originalUrl!=="/v1/erc20-calldata-sample" ||
+     req.get("Content-Length") || req.get("Transfer-Encoding"))
+    return res.status(400).json({ok:false,charged:false,error:"Only exact free GET allowed"});
+  return res.status(200).json({
+    ...inspectErc20Calldata(DEFAULT_ERC20_CALLDATA),
+    paid:false,chargedUSDC:"0",exampleOnly:true,
+    input:DEFAULT_ERC20_CALLDATA,
+    paidEndpoint:"GET /v1/erc20-calldata-preflight?calldata=0x...",
+    priceNativeBaseCircleUSDC:"0.01",payTo:TAPEOUT_PAYOUT,
+    disclosure:"Synthetic example only; static calldata cannot establish a contract's actual deployed code, token decimals, approvals or buyer intent."
+  });
+});
+app.get("/v1/erc20-calldata-preflight",(req,res,next)=>{
+  if(req.originalUrl.length>300 || req.get("Content-Length") || req.get("Transfer-Encoding") ||
+     Object.keys(req.query).some(x=>x!=="calldata") ||
+     Object.keys(req.query).length>1 ||
+     (req.query.calldata!==undefined && typeof req.query.calldata!=="string"))
+    return res.status(400).json({ok:false,charged:false,error:"Only one bounded unsigned public calldata hex query supported"});
+  try{
+    res.locals.erc20CalldataReport=inspectErc20Calldata(req.query.calldata);
+    next();
+  }catch(e){
+    return res.status(400).json({ok:false,charged:false,error:typeof e.code==="string"?e.code:"INVALID_UNSIGNED_PUBLIC_CALLDATA"});
+  }
+},mirrorCanonicalVM1Erc20Quote,payment,(_req,res)=>res.status(200).json({
+  ...res.locals.erc20CalldataReport,
+  paid:true,chargedUSDC:"0.01",network:NETWORK,
+  originalVM1PayoutAddress:TAPEOUT_PAYOUT,
+  confirmedIndependentBuyersForRoute:0,
+  disclosure:"Only an independent wallet-authorized x402 middleware response entitles paid content; caller must separately verify token contract, network and intent. Not a signature or trade."
+}));
+
 app.get("/v1/x402-template",validateOptionalTemplateFormat,echoCanonicalX402ChallengeOnTemplate,payment,(_req,res)=>res.status(200).json({
   ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
   kind:"x402_v2_openapi_starter",templateFormat:"YAML",openapiTemplate:paymentTemplate,
@@ -964,7 +1046,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 17 actually configured paid routes, including NEW Aave Pool facts
+    const catalog=makeCatalog(origin,routes); // 18 actually configured paid routes, including VM1 ERC20 calldata preflight
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -978,7 +1060,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==17)throw Error("Incomplete public manifest");
+    if(resources.length!==18)throw Error("Incomplete public manifest");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",

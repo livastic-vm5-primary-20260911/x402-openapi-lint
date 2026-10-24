@@ -15,13 +15,13 @@ async function manifest(){
  return r.json();
 }
 
-test("Public original publisher manifest has seventeen distinct real x402 v2 priced resource objects, no purchase",async()=>{
+test("Public original publisher manifest has eighteen distinct real x402 v2 priced resource objects, no purchase",async()=>{
  const d=await manifest();
  assert.equal(d.x402Version,2);
- assert.equal(d.resources.length,17);
- assert.equal(new Set(d.resources.map(x=>x.url)).size,17);
+ assert.equal(d.resources.length,18);
+ assert.equal(new Set(d.resources.map(x=>x.url)).size,18);
  const old=await(await fetch(ORIGIN+"/.well-known/x402.json")).json();
- assert.equal(old.resources.length,17);
+ assert.equal(old.resources.length,18);
  assert.deepEqual(d.resources.map(x=>x.url).sort(),old.resources.slice().sort(),
    "New manifest must neither invent nor hide a single older paid merchant route");
  for(const e of d.resources){
@@ -48,7 +48,7 @@ test("Public original publisher manifest has seventeen distinct real x402 v2 pri
 test("Each source object preserves the exact recipient and token atomics of in-process middleware",async()=>{
  const d=await manifest();
  const count=(owner)=>d.resources.filter(x=>x.accepts[0].payTo.toLowerCase()===owner).length;
- assert.equal(count(VM1),4,"Two prior TapeOut, BTC funding and new Aave Base facts pay the ONE original VM1 MetaMask");
+ assert.equal(count(VM1),5,"Two TapeOut, BTC funding, Aave Base and new ERC20 calldata facts pay the ONE original VM1 MetaMask");
  assert.equal(count(VM5),13,"Thirteen existing unrelated API SKUs keep older VM5 merchant payee");
  const f=d.resources.find(x=>new URL(x.url).pathname==="/v1/btc-funding-four-venues");
  assert.ok(f);
@@ -62,7 +62,7 @@ test("Each source object preserves the exact recipient and token atomics of in-p
  assert.deepEqual(op.security,[]);
 });
 
-test("Free 17-product manifest refuses unexpected query and never asks for a buyer payment",async()=>{
+test("Free 18-product manifest refuses unexpected query and never asks for a buyer payment",async()=>{
  for(const extra of ["?q=foo","?payTo=0x123","?q=1&q=2"]){
    const r=await fetch(MANIFEST_URL+extra);
    assert.equal(r.status,400,extra);
