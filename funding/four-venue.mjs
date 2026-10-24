@@ -10,6 +10,14 @@ export const FUNDING_ROUTES = Object.freeze([
   Object.freeze({venue:"OKX",url:"https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP",priceUnit:"USDT"}),
   Object.freeze({venue:"Bitget",url:"https://api.bitget.com/api/v2/mix/market/current-fund-rate?symbol=BTCUSDT&productType=USDT-FUTURES",priceUnit:"USDT"}),
 ]);
+// Regional host/IP denials (e.g. Bybit returning 403 from a cloud platform)
+// may be handled ONLY with distinct public-source venue replacements.
+// Never pretend a missing provider quote was fetched. The paid response names
+// exactly the FOUR actual successful providers, not every attempted provider.
+export const FUNDING_FALLBACK_ROUTES = Object.freeze([
+  Object.freeze({venue:"MEXC",url:"https://contract.mexc.com/api/v1/contract/funding_rate/BTC_USDT",priceUnit:"USDT"}),
+  Object.freeze({venue:"Gate.io",url:"https://api.gateio.ws/api/v4/futures/usdt/contracts/BTC_USDT",priceUnit:"USDT"})
+]);
 export const SOURCE_MAX_BYTES = 10_240;
 export const FETCH_TIMEOUT_MS = 5_000;
 export const SOURCE_STALENESS_MS = 180_000;
@@ -37,7 +45,7 @@ function interval(raw,label){
   return n;
 }
 function parseOne(venue,payload,nowMs){
-  let rate,sourceMs,nextMs,intervalHours=null,upstreamSymbol;
+  let rate,sourceMs,nextMs,intervalHours=null,upstreamSymbol,sourceTimeMethod="upstream_publication_timestamp";
   if(venue==="Binance"){
     if(!obj(payload)){throw new FundingSourceUnavailable("Binance: wrong response");}
     upstreamSymbol=payload.symbol;
@@ -70,10 +78,35 @@ function parseOne(venue,payload,nowMs){
     sourceMs=nonnegativeEpoch(payload.requestTime,"Bitget");
     nextMs=nonnegativeEpoch(p.nextUpdate,"Bitget");
     intervalHours=interval(p.fundingRateInterval,"Bitget");
+  }else if(venue==="MEXC"){
+    if(!obj(payload)||payload.success!==true||payload.code!==0||!obj(payload.data))
+      throw new FundingSourceUnavailable("MEXC: unexpected schema");
+    const p=payload.data;upstreamSymbol=p.symbol;
+    rate=funding(String(p.fundingRate??""),"MEXC");
+    sourceMs=nonnegativeEpoch(p.timestamp,"MEXC");
+    nextMs=nonnegativeEpoch(p.nextSettleTime,"MEXC");
+    intervalHours=interval(p.collectCycle,"MEXC");
+  }else if(venue==="Gate.io"){
+    if(!obj(payload))throw new FundingSourceUnavailable("Gate.io: unexpected schema");
+    upstreamSymbol=payload.name;
+    rate=funding(payload.funding_rate,"Gate.io");
+    const ts=Number(payload.funding_next_apply);
+    if(!Number.isSafeInteger(ts)||ts<1_600_000_000||ts>4_000_000_000)
+      throw new FundingSourceUnavailable("Gate.io: invalid next settlement timestamp");
+    nextMs=ts*1000;
+    const seconds=Number(payload.funding_interval);
+    if(!Number.isInteger(seconds)||seconds<3600||seconds>86_400||seconds%3600)
+      throw new FundingSourceUnavailable("Gate.io: unsupported funding interval");
+    intervalHours=interval(seconds/3600,"Gate.io");
+    // Gate public contract metadata contains NO individual quoted-rate
+    // publication time. Record local observation time explicitly; do NOT
+    // mislabel it as independently verified upstream publication time.
+    sourceMs=nowMs;
+    sourceTimeMethod="observed_at_https_response_not_provider_published";
   }else{
     throw new FundingSourceUnavailable("unknown venue");
   }
-  if((venue==="OKX"?upstreamSymbol!=="BTC-USDT-SWAP":upstreamSymbol!=="BTCUSDT"))
+  if((venue==="OKX"?upstreamSymbol!=="BTC-USDT-SWAP":(venue==="MEXC"||venue==="Gate.io")?upstreamSymbol!=="BTC_USDT":upstreamSymbol!=="BTCUSDT"))
     throw new FundingSourceUnavailable(venue+": unexpected symbol");
   // A stale or future-dated quote must not be sold as current: reject BEFORE the payment challenge.
   if(Math.abs(nowMs-sourceMs)>SOURCE_STALENESS_MS)
@@ -88,8 +121,12 @@ function parseOne(venue,payload,nowMs){
     quotedFundingRateBps:Number((n*10_000).toFixed(7)),
     intervalHours,
     nextFundingUtc:new Date(nextMs).toISOString(),
-    providerTimestampUtc:new Date(sourceMs).toISOString(),
-    dataQuality:"fresh public venue quote, not a finalized funding settlement",
+    providerTimestampUtc:sourceTimeMethod==="upstream_publication_timestamp"?new Date(sourceMs).toISOString():null,
+    observedAtUtc:new Date(nowMs).toISOString(),
+    sourceTimestampBasis:sourceTimeMethod,
+    dataQuality:sourceTimeMethod==="upstream_publication_timestamp" ?
+      "fresh upstream timestamped public quote, not a finalized settlement" :
+      "fresh HTTPS observation; this venue did not publish a verifiable quote update timestamp",
   };
 }
 async function getJSON(route,fetchImpl,timeoutMs){
@@ -125,8 +162,26 @@ export function createFourVenueReader({fetchImpl=fetch,clock=Date.now,cacheMs=CA
     pending=(async()=>{
       try{
         const sampledAtMs=clock();
-        const data=await Promise.all(FUNDING_ROUTES.map(async route=>parseOne(route.venue,await getJSON(route,fetchImpl,timeoutMs),sampledAtMs)));
-        // Deterministic selection: four unique upstream venues; preserve original provider order for diff-able responses.
+        const tried=await Promise.allSettled(FUNDING_ROUTES.map(async route=>
+          parseOne(route.venue,await getJSON(route,fetchImpl,timeoutMs),sampledAtMs)));
+        const data=tried.filter(x=>x.status==="fulfilled").map(x=>x.value);
+        const failureReasons=tried.filter(x=>x.status==="rejected").map(x=>
+          x.reason instanceof FundingSourceUnavailable ? x.reason.message.split("unavailable: ").at(-1) : "public read failed");
+        // Each replacement is a distinct spot-quoted USDT linear perpetual
+        // on the same BTC underlying; no synthetic value or self-paid data.
+        // Avoid optional provider fetches when all four primary feeds work.
+        for(const route of FUNDING_FALLBACK_ROUTES){
+          if(data.length===4)break;
+          try{data.push(parseOne(route.venue,await getJSON(route,fetchImpl,timeoutMs),sampledAtMs));}
+          catch(e){failureReasons.push(e instanceof FundingSourceUnavailable?
+            e.message.split("unavailable: ").at(-1):"public fallback failed");}
+        }
+        if(data.length!==4){
+          // This error is returned BEFORE a payment quote; no partial paid
+          // snapshot, and no invented market data when providers are down.
+          throw new FundingSourceUnavailable("Only "+data.length+
+            " of four independent venue quotes verified; "+failureReasons.join("; ").slice(0,160));
+        }
         if(new Set(data.map(x=>x.venue)).size!==4)throw new FundingSourceUnavailable("duplicate venue");
         const bps=data.map(x=>x.quotedFundingRateBps);
         const out=Object.freeze({
@@ -134,6 +189,8 @@ export function createFourVenueReader({fetchImpl=fetch,clock=Date.now,cacheMs=CA
           asOfUtc:new Date(sampledAtMs).toISOString(),
           underlying:"BTC", quoteAsset:"USDT", sourceCount:4,
           venues:data,
+          attemptedPrimaryVenues:FUNDING_ROUTES.map(x=>x.venue),
+          replacementVenuePolicy:"MEXC or Gate.io may replace a blocked original venue; exactly four successful distinct exchanges required",
           comparison:{
             maxQuotedFundingBps:Math.max(...bps),
             minQuotedFundingBps:Math.min(...bps),
@@ -144,7 +201,8 @@ export function createFourVenueReader({fetchImpl=fetch,clock=Date.now,cacheMs=CA
             "Quotes can change before next settlement and may differ by account, exchange rule, position size or market conditions.",
             "No trading, order submission, account balances, personal data, API keys, signing, leverage, lending or investment recommendation.",
             "Binance source does not independently provide a current funding interval, so its intervalHours is null.",
-            "All 4 fresh public sources are required before this service quotes x402; partial output is never sold."
+            "Exactly 4 verified distinct public sources are required before an x402 quote; blocked venues may be replaced by named MEXC/Gate.io public sources, never filled with estimates.",
+            "Gate.io does not publish a per-quote update timestamp: the report labels its HTTPS observation time and does not imply independent source-age verification."
           ],
           independentConfirmedPayingBuyersForThisProduct:0,
         });

@@ -61,7 +61,7 @@ const documentation={
   paidFourVenuePerpetualFunding:{
     method:"GET",path:"/v1/btc-funding-four-venues",priceNativeBaseCircleUSDC:FUNDING_PRICE_USDC,
     network:NETWORK,asset:"0x833589fCD6eDb6E08f4c7C32d4f71b54bdA02913",payTo:FUNDING_PAYOUT_BASE,
-    scope:"Four fresh public exchange funding-rate quotes for BTC/USDT linear perpetuals: Binance, Bybit, OKX, Bitget. All four fetched before x402; incomplete, stale, malformed or unavailable quotes return 503 without charge.",
+    scope:"Four fresh public exchange funding-rate quotes for BTC/USDT linear perpetuals: Binance, Bybit, OKX, Bitget, with named MEXC/Gate.io backups if one original venue is region-blocked. Four ACTUAL successful distinct quotes before x402; incomplete, stale, malformed or unavailable quotes return 503 without charge.",
     freePreview:"GET /v1/btc-funding-sample",independentPaidCustomerCount:0,
     limitations:"Raw public observations only. Venue-specific funding schedules may differ; not annualized, not profitable arbitrage, not price advice, no trading. Original VM1 receive-only Base USDC."
   },

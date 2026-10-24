@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createFourVenueReader,FUNDING_PAYOUT_BASE,FUNDING_PRICE_USDC,FUNDING_ROUTES,DEMO_FUNDING} from '../funding/four-venue.mjs';
+import {createFourVenueReader,FUNDING_PAYOUT_BASE,FUNDING_PRICE_USDC,FUNDING_ROUTES,FUNDING_FALLBACK_ROUTES,DEMO_FUNDING} from '../funding/four-venue.mjs';
 import {makeDiscovery} from '../discovery.mjs';
 
 const t=Date.parse('2026-10-24T03:33:22.000Z');
@@ -71,7 +71,7 @@ test('Upstream errors and oversized HTTP bodies fail closed; no successful cache
  bad=false;
  const okay=await r();
  assert.equal(okay.sourceCount,4);
- assert.equal(calls,8);
+ assert.equal(calls,10, 'four originally scheduled plus two backup probes on failure and four on successful retry');
  const h=createFourVenueReader({fetchImpl:async()=>response(200,'x'.repeat(10241)),clock:()=>t});
  await assert.rejects(h(),{code:'FUNDING_SOURCE_UNAVAILABLE'});
 });
@@ -116,4 +116,62 @@ test('Source-specific free 503 diagnostics disclose only public exchange name/st
    assert.ok(!err.message.includes('abcd'));
    return true;
  });
+});
+
+
+test('Render regional Bybit HTTP403 is replaced only by a REAL independent MEXC BTCUSDT quote',async()=>{
+ const mexc={success:true,code:0,data:{symbol:'BTC_USDT',fundingRate:0.000068,collectCycle:8,
+   timestamp:t,nextSettleTime:next}};
+ const data=structuredClone(jsons);let seen=[];
+ const fetchImpl=async url=>{
+   seen.push(url);
+   if(url===FUNDING_ROUTES[1].url)return response(403,{error:'region blocked'});
+   if(url===FUNDING_FALLBACK_ROUTES[0].url)return response(200,mexc);
+   const idx=FUNDING_ROUTES.findIndex(v=>v.url===url);assert.ok(idx>=0);return response(200,data[idx]);
+ };
+ const r=await createFourVenueReader({fetchImpl,clock:()=>t})();
+ assert.equal(r.venues.length,4);
+ assert.deepEqual(r.venues.map(x=>x.venue),['Binance','OKX','Bitget','MEXC']);
+ assert.ok(r.attemptedPrimaryVenues.includes('Bybit'));
+ assert.equal(r.venues.find(x=>x.venue==='MEXC').quotedFundingRate,'0.000068');
+ assert.equal(r.venues.find(x=>x.venue==='MEXC').intervalHours,8);
+ assert.equal(seen.length,5, 'Only needed MEXC backup is contacted; no unnecessary Gate request');
+ assert.ok(!seen.includes(FUNDING_FALLBACK_ROUTES[1].url));
+ assert.equal(r.sourceCount,4);
+ assert.equal(r.independentConfirmedPayingBuyersForThisProduct,0);
+});
+
+test('Two region-restricted sources can be replaced by MEXC plus explicitly timestamp-limited Gate.io',async()=>{
+ const mexc={success:true,code:0,data:{symbol:'BTC_USDT',fundingRate:0.000068,collectCycle:8,
+   timestamp:t,nextSettleTime:next}};
+ const gate={name:'BTC_USDT',funding_rate:'0.000057',funding_next_apply:Math.round(next/1000),funding_interval:28800};
+ const seen=[];
+ const fetchImpl=async url=>{
+   seen.push(url);
+   if([FUNDING_ROUTES[1].url,FUNDING_ROUTES[3].url].includes(url))return response(403,'denied');
+   if(url===FUNDING_FALLBACK_ROUTES[0].url)return response(200,mexc);
+   if(url===FUNDING_FALLBACK_ROUTES[1].url)return response(200,gate);
+   const ix=FUNDING_ROUTES.findIndex(v=>v.url===url);assert.ok(ix>=0);return response(200,jsons[ix]);
+ };
+ const v=await createFourVenueReader({fetchImpl,clock:()=>t})();
+ assert.deepEqual(v.venues.map(x=>x.venue),['Binance','OKX','MEXC','Gate.io']);
+ assert.equal(new Set(v.venues.map(x=>x.venue)).size,4);
+ assert.equal(seen.length,6);
+ assert.equal(v.venues.at(-1).providerTimestampUtc,null);
+ assert.equal(v.venues.at(-1).sourceTimestampBasis,'observed_at_https_response_not_provider_published');
+ assert.equal(v.venues.at(-1).intervalHours,8);
+ assert.match(v.caveats.join(' '),/Gate.io does not publish/);
+});
+
+test('Three blocked primary providers with only two backup slots fail before payment, never return a two/three-source misleading quote',async()=>{
+ const fetchImpl=async url=>{
+   const idx=FUNDING_ROUTES.findIndex(x=>x.url===url);
+   if(idx===0)return response(200,jsons[0]);
+   if(idx>0)return response(403,'no data');
+   if(url===FUNDING_FALLBACK_ROUTES[0].url)return response(200,{success:true,code:0,data:{symbol:'BTC_USDT',fundingRate:0.000068,collectCycle:8,timestamp:t,nextSettleTime:next}});
+   if(url===FUNDING_FALLBACK_ROUTES[1].url)return response(200,{name:'BTC_USDT',funding_rate:'0.000057',funding_next_apply:Math.round(next/1000),funding_interval:28800});
+   assert.fail('Unexpected URL');
+ };
+ const rd=createFourVenueReader({fetchImpl,clock:()=>t});
+ await assert.rejects(rd(),e=>{assert.equal(e.code,'FUNDING_SOURCE_UNAVAILABLE');assert.match(e.message,/Only 3 of four independent venue quotes verified/);return true});
 });
