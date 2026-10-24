@@ -1,5 +1,42 @@
 # VM5 x402 OpenAPI Lint — paid API pilot
 
+
+## Agent marketplace discovery — registered 25 October 2026
+
+**[Open VM5's registered Poncho / x402scan merchant page](https://tryponcho.com/m/vm5-openapi-x402.onrender.com)**
+
+This is an **existing**, AI-assisted, one-owner merchant selling Base native
+Circle USDC x402 services, not a wallet custodian or exchange. The publisher's
+registration UI confirmed the current origin with **39 resource registration
+records**, 7 publicly unprotected endpoints skipped, and 1 legacy listing
+deprecated. The on-origin OpenAPI separately describes **21 paid operations**
+and 25 ungated routes. A registration count is not the number of paying buyers.
+
+The official @agentcash/discovery v1.7.5 CLI now recognizes the original
+paid **ERC-20 event decoder** route with GET, 0.01 USD, x402 payment.
+The older L3_NOT_FOUND result disappeared after the original, no-fee
+merchant-origin registration. This validates discoverability, **not** a
+settled purchase or a sponsor payment:
+
+- **Free (fictional-only) preview:** [ERC-20 event example](https://vm5-openapi-x402.onrender.com/v1/erc20-event-sample).
+- **Paid API (unpaid HTTP 402 returns terms):** [ERC-20 event decoder](https://vm5-openapi-x402.onrender.com/v1/erc20-event-preflight).
+- **Public machine-readable catalogue:** [OpenAPI 3.1](https://vm5-openapi-x402.onrender.com/openapi.json).
+
+No secret, checkout-card credential or third-party account is needed to read
+the 402 quote. The **exact 0.010000 Base native Circle USDC** transfer is
+authorized only by a willing buyer through the x402 v2 protocol on chain
+eip155:8453; the original owner receiver and route's PAYMENT-REQUIRED
+header must be checked *before* signing. Invalid input may be
+rejected **without charging**. The application does not broadcast wallet
+transactions or hold private keys.
+
+**Commercial status:** directory listing and free preview work; this
+registration by itself establishes **zero new outside purchases, zero
+new buyer-attributed earned USDC and zero fiat payout**. Prior historic,
+separate outside scout purchases are disclosed below and are not
+recategorized as this release's sales.
+
+
 ## Live TapeOut x402 API — free preview, optional 0.005 USDC request
 
 **Buyer quickstart (verified live 2026-10-23):** [Free sample JSON](https://vm5-openapi-x402.onrender.com/v1/tapeout-cpu0-sample) (`GET`, HTTP 200), [free read-only X Layer explorer](https://livastic-vm5-primary-20260911.github.io/tapeout-xlayer-integrity-lens/), and [optional paid machine-readable CPU0 report](https://vm5-openapi-x402.onrender.com/v1/tapeout-cpu0-report) (`GET`, unsigned HTTP 402). The live advertised quote is **0.005000 native Circle USDC per paid call on Base mainnet (eip155:8453)**, payable only with a separate buyer-signed x402 authorization to the merchant's existing public VM1 EVM recipient. Inspect the current `PAYMENT-REQUIRED` header before authorizing; do not paste wallet secrets or payment signatures into issues.
