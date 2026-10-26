@@ -444,7 +444,7 @@ const routes={
     })
   },
   "GET /v1/https-cert-preflight":{
-    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:PAY_TO},
+    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:TAPEOUT_PAYOUT},
     description:"Public TLS certificate expiry, not-before, host match and CA-authorization preflight via pinned public IPv4 only. Domain optional defaults github.com. No customer endpoints, HTTP requests, source code, private IP or paid buyer order asserted; invalid public DNS/TLS fails before any x402 quote.",
     mimeType:"application/json",
     extensions:declareDiscoveryExtension({
