@@ -54,7 +54,7 @@ Only legitimate independent paid-work requests with accepted scope, AI-assistanc
 
 ## NEW paid GitHub Actions workflow-risk source service (zero outside buyers as of release)
 - GET /v1/workflow-risk-sample — public synthetic static GitHub Actions YAML and example findings (FREE).
-- POST /v1/workflow-risk — JSON {workflowYaml: string (<=48KB UTF-8), filename: optional ci.yml, includeSarif: optional bool}. Return HTTP400 without charge for invalid/unparseable input; valid input requires a real independently authorized x402 v2 native Circle Base8453 USDC 0.20 per signed call (200000 atomic).
+- POST /v1/workflow-risk — JSON {workflowYaml: string (<=48KB UTF-8), filename: optional ci.yml, includeSarif: optional bool}. Return HTTP400 without charge for invalid/unparseable input; valid input requires a real independently authorized x402 v2 native Circle Base8453 USDC 0.10 per signed call (100000 atomic).
 - Produces bounded heuristic findings and optional SARIF; static ONLY (never executes YAML, accesses GitHub repos, reads secrets, or certifies security). No organic paid customers for this NEW route until actually proven. Source MIT same-one-owner VM2 at https://github.com/livastic-vm2-primary-20260911/apify-workflow-guard .
 - Do not submit secrets, private organization workflows, customer confidential data or wallet recovery words. No bank fiat payout or profit claimed.
 

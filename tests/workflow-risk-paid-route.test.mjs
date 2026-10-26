@@ -17,7 +17,7 @@ const quote=(r)=>{
  assert.equal(d.x402Version,2);
  assert.equal(d.accepts.length,1);
  assert.equal(d.accepts[0].scheme,"exact");
- assert.equal(d.accepts[0].amount,"200000");
+ assert.equal(d.accepts[0].amount,"100000");
  assert.equal(d.accepts[0].network,"eip155:8453");
  assert.equal(d.accepts[0].asset.toLowerCase(),USDC);
  assert.equal(d.accepts[0].payTo.toLowerCase(),CHECKSUM_PAYTO);
@@ -43,7 +43,7 @@ test("FREE public sample is valid, unmetered, synthetic and cites same-owner MIT
  const r=await fetch(BASE+"/v1/workflow-risk-sample");
  assert.equal(r.status,200);assert.equal(r.headers.get("payment-required"),null);
  const d=await r.json();
- assert.equal(d.paid,false);assert.equal(d.priceUSDC,"0.20");
+ assert.equal(d.paid,false);assert.equal(d.priceUSDC,"0.10");
  assert.equal(d.confirmedIndependentPaidCustomers,0);
  assert.equal(d.sampleReport.ok,true);
  assert.ok(d.sampleWorkflow.includes("on: pull_request"));
@@ -76,13 +76,13 @@ test("No workflow source ingestion with missing/wrong content-type; CORS options
  assert.equal(options.status,204);
  assert.equal(options.headers.get("payment-required"),null);
 });
-test("Actual challenge for valid NONSECRET user workflow is exact 0.20 native Base Circle USDC, POST Bazaar input",async()=>{
+test("Actual challenge for valid NONSECRET user workflow is exact 0.10 native Base Circle USDC, POST Bazaar input",async()=>{
  const r=await request({workflowYaml:PUBLIC_SYNTHETIC_YAML,filename:"ci.yml",includeSarif:true});
  assert.equal(r.status,402);
  const q=quote(r);
  assert.equal(q.extensions?.bazaar?.info?.input?.method,"POST");
  assert.equal(q.extensions?.bazaar?.info?.input?.bodyType,"json");
- assert.equal(q.extensions?.bazaar?.info?.output?.example?.chargedUSDC,"0.20");
+ assert.equal(q.extensions?.bazaar?.info?.output?.example?.chargedUSDC,"0.10");
  assert.equal(q.extensions?.bazaar?.info?.output?.example?.confirmedIndependentPaidCustomers,0);
 });
 test("FAKE localhost facilitator marker ONLY: valid workflow produces paid static SARIF report",async()=>{
@@ -94,7 +94,7 @@ test("FAKE localhost facilitator marker ONLY: valid workflow produces paid stati
  const d=await r.json();
  assert.equal(d.ok,true);
  assert.equal(d.paid,true);
- assert.equal(d.chargedUSDC,"0.20");
+ assert.equal(d.chargedUSDC,"0.10");
  assert.equal(d.network,"eip155:8453");
  assert.equal(d.noWorkflowExecuted,true);
  assert.equal(d.confirmedIndependentPaidCustomers,0);
@@ -112,7 +112,7 @@ test("Invalid mock signature never releases report as paid, no fallback",async()
 test("OpenAPI, public x402 discovery, old signed prices and user wallet remain accurate",()=>{
  const {spec,wellKnown}=makeDiscovery("https://vm5-openapi-x402.onrender.com");
  const op=spec.paths["/v1/workflow-risk"].post;
- assert.equal(op["x-payment-info"].price.amount,"0.20");
+ assert.equal(op["x-payment-info"].price.amount,"0.10");
  assert.equal(op.requestBody.content["application/json"].schema.required[0],"workflowYaml");
  assert.equal(op.security[0].x402Payment.length,0);
  assert.ok(op.responses["400"]);assert.ok(op.responses["402"]);

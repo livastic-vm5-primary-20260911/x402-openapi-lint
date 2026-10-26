@@ -173,7 +173,7 @@ const documentation={
     purpose:"RFC4180-style CSV structural preflight for real buyer CSV bytes. Returns row/column counts, duplicate rows, type mismatches, missing cells and formula injection warnings; never echoes raw row cells or persists uploaded CSV.",
     schema:{csvText:"UTF8 CSV <=32kb",expectedColumns:"optional nonempty column-name array <=40"},
     limitations:"Not full spreadsheet compliance, data truth, threat scanning or GDPR certification; do not submit secrets, infrastructure/settlement log separately."},
-  paidWorkflowRisk:{method:"POST",path:"/v1/workflow-risk",priceUSDC:"0.20",network:NETWORK,
+  paidWorkflowRisk:{method:"POST",path:"/v1/workflow-risk",priceUSDC:"0.10",network:NETWORK,
     purpose:"Analyze one caller-supplied 48KB GitHub Actions YAML source for workflow security risk heuristics: action pins, PR head checkout, token permissions, interpolation and self-hosted-runner exposure, with optional source-linked SARIF. Static rules only; no workflow execution or remote repository access.",
     schema:{workflowYaml:"A nonsecret GitHub Actions YAML string <=48000 UTF-8 bytes",filename:"optional ci.yml basename",includeSarif:"optional bool, default true"},
     sample:"GET /v1/workflow-risk-sample",confirmedIndependentPaidCustomers:0,
@@ -229,7 +229,7 @@ const documentation={
 };
 const routes={
   "POST /v1/workflow-risk":{
-    accepts:{scheme:"exact",price:"$0.20",network:NETWORK,payTo:PAY_TO},
+    accepts:{scheme:"exact",price:"$0.10",network:NETWORK,payTo:PAY_TO},
     description:"Paid original GitHub Actions YAML static workflow-risk heuristic report, optional SARIF. 48KB nonsecret input, only valid workflows reach the x402 payment request; no YAML execution, private repo access, penetration testing or certified security audit. Developed by the SAME one-human-owner VM2 under MIT; VM5 is merchant.",
     mimeType:"application/json",
     extensions:declareDiscoveryExtension({
@@ -237,7 +237,7 @@ const routes={
       input:{workflowYaml:PUBLIC_SYNTHETIC_YAML,filename:"ci.yml",includeSarif:true},
       inputSchema:{type:"object",additionalProperties:false,required:["workflowYaml"],
         properties:{workflowYaml:{type:"string",maxLength:48000},filename:{type:"string",maxLength:94},includeSarif:{type:"boolean"}}},
-      output:{example:{ok:true,paid:true,chargedUSDC:"0.20",network:NETWORK,staticOnly:true,findingsTruncated:false,
+      output:{example:{ok:true,paid:true,chargedUSDC:"0.10",network:NETWORK,staticOnly:true,findingsTruncated:false,
         workflowEvents:["pull_request"],counts:{high:0,medium:1,note:0},noWorkflowExecuted:true,
         confirmedIndependentPaidCustomers:0}}
     })
@@ -607,7 +607,7 @@ app.get("/v1/workflow-risk-sample",(_req,res)=>{
   if(!sample.ok)return res.status(503).json({ok:false,error:"Synthetic workflow fixture unavailable."});
   return res.status(200).json({exampleOnly:true,paid:false,chargedUSDC:"0",
     sampleWorkflow:PUBLIC_SYNTHETIC_YAML,sampleReport:sample,
-    paidEndpoint:"POST /v1/workflow-risk",priceUSDC:"0.20",network:NETWORK,confirmedIndependentPaidCustomers:0,
+    paidEndpoint:"POST /v1/workflow-risk",priceUSDC:"0.10",network:NETWORK,confirmedIndependentPaidCustomers:0,
     source:"https://github.com/livastic-vm2-primary-20260911/apify-workflow-guard",
     warning:"This is a publicly reproducible synthetic example. Purchase pays for hosted preflight on your own NONSECRET workflow, not security certification, runtime testing, unique IP or any prior external client order."});
 });
@@ -1635,7 +1635,7 @@ app.post("/v1/workflow-risk",
    res.locals.workflowReport=report;
    next();
  },payment,(_req,res)=>res.status(200).json({
-   ...res.locals.workflowReport,paid:true,chargedUSDC:"0.20",network:NETWORK,
+   ...res.locals.workflowReport,paid:true,chargedUSDC:"0.10",network:NETWORK,
    product:"static_gha_yaml_risk_preflight",noWorkflowExecuted:true,confirmedIndependentPaidCustomers:0,
    limitations:"MIT same-owner VM2 static heuristic analysis; NOT penetration testing, a security audit, legal certification, runtime CI check, factual code risk guarantee or exclusive source IP transfer."
  }));

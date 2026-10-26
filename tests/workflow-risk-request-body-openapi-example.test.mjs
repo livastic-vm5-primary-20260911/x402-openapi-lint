@@ -4,7 +4,7 @@ import {makeDiscovery} from "../discovery.mjs";
 
 const REAL_HOST="https://vm5-openapi-x402.onrender.com";
 const WORKFLOW="/v1/workflow-risk";
-const PRICE="0.20";
+const PRICE="0.10";
 const BASE="eip155:8453";
 const CIRCLE_USDC="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const OFFER=makeDiscovery(REAL_HOST);

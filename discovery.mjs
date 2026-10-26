@@ -46,7 +46,7 @@ export function makeDiscovery(origin) {
   const fourFundingPayInfo={...payInfo,payTo:FUNDING_PAYOUT_BASE,price:{mode:"fixed",currency:"USD",amount:FUNDING_PRICE_USDC}};
   const erc20PayInfo={...payInfo,payTo:TAPEOUT_PAYOUT,price:{mode:"fixed",currency:"USD",amount:"0.01"}};
   const lowpolyPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.05"}};
-  const workflowRiskPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.20"}};
+  const workflowRiskPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.10"}};
   const receiptPayInfo={
     ...payInfo,
     price:{mode:"fixed",currency:"USD",amount:"0.005"}
