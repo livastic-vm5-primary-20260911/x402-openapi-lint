@@ -457,7 +457,7 @@ const routes={
     })
   },
   "GET /v1/email-dns-preflight":{
-    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:PAY_TO},
+    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:TAPEOUT_PAYOUT},
     description:"One bounded public MX/SPF/DMARC and A DNS configuration report. Optional domain query, defaults to gmail.com. No mailbox, SMTP, DKIM selector or inbox deliverability verification. Rejected invalid/unresolvable inputs not charged.",
     mimeType:"application/json",
     extensions:declareDiscoveryExtension({

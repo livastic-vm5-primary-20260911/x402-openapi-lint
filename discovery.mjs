@@ -47,6 +47,7 @@ export function makeDiscovery(origin) {
   const erc20PayInfo={...payInfo,payTo:TAPEOUT_PAYOUT,price:{mode:"fixed",currency:"USD",amount:"0.01"}};
   const lowpolyPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.05"}};
   const workflowRiskPayInfo={...payInfo,price:{mode:"fixed",currency:"USD",amount:"0.10"}};
+  const emailDnsPayInfo={...receiptPayInfo,payTo:TAPEOUT_PAYOUT};
   const receiptPayInfo={
     ...payInfo,
     price:{mode:"fixed",currency:"USD",amount:"0.005"}
@@ -246,7 +247,7 @@ export function makeDiscovery(origin) {
         tags:["Public TLS"],summary:"Public HTTPS certificate expiry and trust preflight for 0.005 Base USDC",
         operationId:"tlsCertificateExpiryPreflight",security:[{x402Payment:[]}],
         description:"Public domain-only pinned-global-IPv4 SNI TLS certificate metadata. Validity dates, issuer, hostname match and local CA trust, no HTTP request, DNS rebinding to private IP, secrets, site ownership, web-content security or revocation certification. Domain invalid or public TLS inaccessible fails BEFORE payment.",
-        "x-payment-info":receiptPayInfo,
+        "x-payment-info":emailDnsPayInfo,
         parameters:[{name:"domain",in:"query",required:false,
           description:"Fully-qualified public DNS name only, not URL/email/private IP/port; default github.com",
           schema:{type:"string",minLength:4,maxLength:253,example:"github.com",default:"github.com"}}],
@@ -268,7 +269,7 @@ export function makeDiscovery(origin) {
         tags:["Public DNS"],summary:"Read public MX/SPF/DMARC DNS policy preflight for 0.005 Base USDC",
         operationId:"inspectPublicEmailDns",security:[{x402Payment:[]}],
         description:"Read-only bounded public MX, SPF TXT, DMARC TXT and A DNS lookup. Optional domain defaults to gmail.com. Verify syntax and live DNS availability BEFORE quoting x402 payment; no mailbox probing, SMTP, DKIM selectors, domain ownership or guaranteed email deliverability. No prior verified buyer for this route.",
-        "x-payment-info":receiptPayInfo,
+        "x-payment-info":emailDnsPayInfo,
         parameters:[{name:"domain",in:"query",required:false,description:"Public DNS domain only (not email/URL/IP/private domain); omit for gmail.com",schema:{type:"string",minLength:4,maxLength:253,example:"gmail.com",default:"gmail.com"}}],
         responses:{
           "200":{description:"After genuine x402 settlement, public email DNS configuration check; not SMTP/mailbox deliverability verification.",content:{"application/json":{schema:{type:"object",required:["ok","paid","chargedUSDC","domain","mxCount","spfPresent","dmarcPresent","warnings"],properties:{ok:{type:"boolean"},paid:{type:"boolean"},chargedUSDC:{type:"string",example:"0.005"},domain:{type:"string"},mxCount:{type:"integer"},spfPresent:{type:"boolean"},dmarcPresent:{type:"boolean"},dmarcPolicy:{type:["string","null"]},warnings:{type:"array",items:{type:"string"}},smtpContactAttempted:{type:"boolean"}}}}}},

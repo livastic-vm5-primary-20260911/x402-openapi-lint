@@ -9,7 +9,7 @@ function quoteFrom(response) {
  assert.equal(q.x402Version,2);
  assert.equal(q.accepts[0].network,"eip155:8453");
  assert.equal(q.accepts[0].amount,"5000");
- assert.equal(q.accepts[0].payTo.toLowerCase(),"0x6b01efa0705e91a7aca54271510bf9e594717f34");
+ assert.equal(q.accepts[0].payTo.toLowerCase(),"0x4e3106520e40af30870cafe78da1b1e7110ed98e");
  return q;
 }
 function localMockPayment(quote) {
