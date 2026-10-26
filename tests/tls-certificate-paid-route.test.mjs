@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {makeDiscovery} from "../discovery.mjs";
+import {TLS_CERT_PAYOUT} from "../tls-payout.mjs";
 
 const BASE=process.env.TEST_URL;
 if(!BASE)throw new Error("Only use the original isolated local mocked x402 test server");
@@ -13,7 +14,7 @@ function quoteFrom(res){
   assert.equal(q.accepts.length,1);
   assert.equal(q.accepts[0].amount,"5000");
   assert.equal(q.accepts[0].network,"eip155:8453");
-  assert.equal(q.accepts[0].payTo.toLowerCase(),"0x6b01efa0705e91a7aca54271510bf9e594717f34");
+  assert.equal(q.accepts[0].payTo.toLowerCase(),TLS_CERT_PAYOUT.toLowerCase());
   return q;
 }
 function mockPayment(quote){
@@ -84,6 +85,7 @@ test("paid certificate path indexed alongside nine existing x402 APIs, and previ
   assert.ok(manifest.wellKnown.resources.some(x=>x.endsWith("/v1/https-cert-preflight")));
   const spec=manifest.spec.paths["/v1/https-cert-preflight"].get;
   assert.equal(spec["x-payment-info"].price.amount,"0.005");
+  assert.equal(spec["x-payment-info"].payTo.toLowerCase(),TLS_CERT_PAYOUT.toLowerCase());
   assert.equal(manifest.spec.paths["/v1/tls-certificate-sample"].get.security.length,0);
   assert.ok(spec.responses["402"]);
 });

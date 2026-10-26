@@ -8,6 +8,7 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { declareDiscoveryExtension, bazaarResourceServerExtension } from "@x402/extensions/bazaar";
 import {parseAndGuardSpec,lintSpec,REDOCLY_VERSION,LIMIT_BYTES} from "./validator.mjs";
 import {makeDiscovery} from "./discovery.mjs";
+import {TLS_CERT_PAYOUT} from "./tls-payout.mjs";
 import {validateReceiptQuery,preflightBaseUSDCReceipt} from "./base-usdc-receipt.mjs";
 import {parseGlbBase64, MAX_GLB_BYTES} from "./glb-analyzer.mjs";
 import {generateOriginalGlb} from "./procedural-lowpoly-generator.mjs";
@@ -211,7 +212,7 @@ const routes={
     })
   },
   "GET /v1/https-cert-preflight":{
-    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:PAY_TO},
+    accepts:{scheme:"exact",price:"$0.005",network:NETWORK,payTo:TLS_CERT_PAYOUT},
     description:"Public TLS certificate expiry, not-before, host match and CA-authorization preflight via pinned public IPv4 only. Domain optional defaults github.com. No customer endpoints, HTTP requests, source code, private IP or paid buyer order asserted; invalid public DNS/TLS fails before any x402 quote.",
     mimeType:"application/json",
     extensions:declareDiscoveryExtension({

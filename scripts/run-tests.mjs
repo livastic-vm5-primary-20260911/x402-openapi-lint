@@ -3,6 +3,7 @@ import net from "node:net";
 import {spawn} from "node:child_process";
 import {once} from "node:events";
 import process from "node:process";
+import {TLS_CERT_PAYOUT} from "../tls-payout.mjs";
 
 async function freePort() {
   const server=net.createServer();
@@ -80,7 +81,7 @@ const facilitator=http.createServer((req,res)=>{
       const valid=data?.x402Version===2 &&
         requirements?.network==="eip155:8453" &&
         (requirements?.amount==="1000" || requirements?.amount==="10000" || requirements?.amount==="5000" || requirements?.amount==="50000" || requirements?.amount==="200000") &&
-        requirements?.payTo?.toLowerCase()==="0x6b01efa0705e91a7aca54271510bf9e594717f34" &&
+        (requirements?.payTo?.toLowerCase()==="0x6b01efa0705e91a7aca54271510bf9e594717f34" || requirements?.payTo?.toLowerCase()===TLS_CERT_PAYOUT.toLowerCase()) &&
         marker==="0x"+"11".repeat(65);
       if(req.url==="/verify"){
         res.end(JSON.stringify({isValid:Boolean(valid),invalidReason:valid?undefined:"fixture_invalid_marker",payer:"0x"+"33".repeat(20)}));

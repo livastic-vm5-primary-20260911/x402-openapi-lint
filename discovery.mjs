@@ -1,5 +1,6 @@
 // Machine-readable origin-specific discovery for x402scan and standard OpenAPI clients.
 // Public original synthetic one-triangle sample enables valid POST paywall probes; no private assets.
+import {TLS_CERT_PAYOUT} from "./tls-payout.mjs";
 import {INVOICE_DEMO} from "./invoice-reconcile.mjs";
 const SYNTHETIC_TRIANGLE_GLB_BASE64="Z2xURgIAAABYAQAAGAEAAEpTT057ImFzc2V0Ijp7InZlcnNpb24iOiIyLjAifSwiYnVmZmVycyI6W3siYnl0ZUxlbmd0aCI6MzZ9XSwiYnVmZmVyVmlld3MiOlt7ImJ1ZmZlciI6MCwiYnl0ZU9mZnNldCI6MCwiYnl0ZUxlbmd0aCI6MzZ9XSwiYWNjZXNzb3JzIjpbeyJidWZmZXJWaWV3IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6MywidHlwZSI6IlZFQzMiLCJtaW4iOlswLDAsMF0sIm1heCI6WzEsMSwwXX1dLCJtZXNoZXMiOlt7InByaW1pdGl2ZXMiOlt7ImF0dHJpYnV0ZXMiOnsiUE9TSVRJT04iOjB9fV19XX0gJAAAAEJJTgAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAA=";
 
@@ -35,6 +36,7 @@ export function makeDiscovery(origin) {
     ...payInfo,
     price:{mode:"fixed",currency:"USD",amount:"0.005"}
   };
+  const httpsCertPayInfo={...receiptPayInfo,payTo:TLS_CERT_PAYOUT};
   const spec={
     openapi:"3.1.0",
     info:{
@@ -219,7 +221,7 @@ export function makeDiscovery(origin) {
         tags:["Public TLS"],summary:"Public HTTPS certificate expiry and trust preflight for 0.005 Base USDC",
         operationId:"tlsCertificateExpiryPreflight",security:[{x402Payment:[]}],
         description:"Public domain-only pinned-global-IPv4 SNI TLS certificate metadata. Validity dates, issuer, hostname match and local CA trust, no HTTP request, DNS rebinding to private IP, secrets, site ownership, web-content security or revocation certification. Domain invalid or public TLS inaccessible fails BEFORE payment.",
-        "x-payment-info":receiptPayInfo,
+        "x-payment-info":httpsCertPayInfo,
         parameters:[{name:"domain",in:"query",required:false,
           description:"Fully-qualified public DNS name only, not URL/email/private IP/port; default github.com",
           schema:{type:"string",minLength:4,maxLength:253,example:"github.com",default:"github.com"}}],
