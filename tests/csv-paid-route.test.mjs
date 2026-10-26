@@ -124,5 +124,5 @@ test("Discoverable GET and POST both have 0.005 USDC, free source sample remains
  assert.equal(d.spec.paths["/v1/csv-sample"].get.security.length,0);
  assert.ok(d.wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com/v1/csv-report"));
  assert.ok(d.wellKnown.resources.includes("https://vm5-openapi-x402.onrender.com/v1/csv-preflight"));
- assert.equal(d.wellKnown.resources.length,22);
+ assert.equal(d.wellKnown.resources.length,23);
 });

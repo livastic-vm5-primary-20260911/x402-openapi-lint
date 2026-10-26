@@ -1,5 +1,6 @@
 import express from "express";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { paymentMiddleware } from "@x402/express";
@@ -239,6 +240,14 @@ const routes={
       output:{example:{ok:true,paid:true,chargedUSDC:"0.20",network:NETWORK,staticOnly:true,findingsTruncated:false,
         workflowEvents:["pull_request"],counts:{high:0,medium:1,note:0},noWorkflowExecuted:true,
         confirmedIndependentPaidCustomers:0}}
+    })
+  },
+  "GET /v1/echobloom-source-kit":{
+    accepts:{scheme:"exact",price:"$4.99",network:NETWORK,payTo:TAPEOUT_PAYOUT},
+    description:"Paid download of the original Echobloom Atlas HTML5 developer source kit. 14-entry ZIP with native HTML/CSS/ES-module game source, 18 guaranteed-solvable puzzles, keyboard/touch UI, guide, limited single-project commercial-use terms and QA captures. Before any payment quote, fetch and SHA-256-check the exact source ZIP from the fixed delivery host; if unavailable or mismatched return 503 unpaid. x402 exact native Base Circle USDC paid GET; delivers application/zip bytes only after settled payment. AI-assisted source, no exclusive IP transfer or revenue guarantee.",
+    mimeType:"application/json",
+    extensions:declareDiscoveryExtension({
+      method:"GET",output:{example:{kind:"echobloom_atlas_html5_source_kit",filename:"Echobloom_Atlas_HTML5_Puzzle_Starter_Kit.zip",contentType:"application/zip",downloadable:true,downloadUrl:"https://example.invalid/v1/echobloom-source-kit/download?token=one-time-token",downloadLinkExpiresInSeconds:600,projectCount:1,levelCount:18,license:"single-project commercial use; no source-pack redistribution",aiAssisted:true,sourceSha256:"01f294ac914e7f53b51d9e22687682b802ea9cf37b735d3bac6da6c5c4a39f4b"}}
     })
   },
   "GET /v1/mezo-musd-facts":{
@@ -1353,6 +1362,50 @@ app.get("/v1/base-usdc-allowance",async(req,res,next)=>{
   warning:"The x402 middleware verifies buyer authorization. Public RPC read-only data is not wallet risk certification, owner verification, or a token approval, and could change next block."
 }));
 
+const ECHOBLOOM_ZIP_LANDING="https://tmpfiles.org/w8AoV94hU7dz/echobloom_atlas_html5_puzzle_starter_kit.zip";
+const ECHOBLOOM_ZIP_SHA256="01f294ac914e7f53b51d9e22687682b802ea9cf37b735d3bac6da6c5c4a39f4b";
+let echobloomKitCache=null,echobloomKitCachedAt=0;
+async function requireVerifiedEchobloomKit(_req,res,next){
+  try{
+    if(echobloomKitCache && Date.now()-echobloomKitCachedAt<5*60*1000){res.locals.echobloomKit=echobloomKitCache;return next();}
+    const landing=await fetch(ECHOBLOOM_ZIP_LANDING,{signal:AbortSignal.timeout(7000),redirect:"error",headers:{"User-Agent":"VM5-verified-paid-download/1.0"}});
+    if(!landing.ok || new URL(landing.url).hostname!=="tmpfiles.org")throw new Error("delivery landing unavailable");
+    const html=await landing.text();
+    const match=html.match(/<a class="download" href="(https:\/\/tmpfiles\.org\/dl\/[^"]+)">Download/);
+    if(!match)throw new Error("delivery link unavailable");
+    const downloadUrl=new URL(match[1]);
+    if(downloadUrl.protocol!=="https:"||downloadUrl.hostname!=="tmpfiles.org"||!downloadUrl.pathname.startsWith("/dl/"))throw new Error("delivery host mismatch");
+    const file=await fetch(downloadUrl,{signal:AbortSignal.timeout(12000),redirect:"error",headers:{"User-Agent":"VM5-verified-paid-download/1.0"}});
+    if(!file.ok || file.headers.get("content-type")?.split(";")[0]!=="application/zip")throw new Error("delivery bytes unavailable");
+    const bytes=Buffer.from(await file.arrayBuffer());
+    if(bytes.length<100000||bytes.length>2*1024*1024||bytes.subarray(0,4).toString("hex")!=="504b0304")throw new Error("delivery ZIP failed size or signature check");
+    const digest=crypto.createHash("sha256").update(bytes).digest("hex");
+    if(digest!==ECHOBLOOM_ZIP_SHA256)throw new Error("delivery hash mismatch");
+    echobloomKitCache=bytes;echobloomKitCachedAt=Date.now();res.locals.echobloomKit=bytes;return next();
+  }catch{
+    return res.status(503).json({ok:false,charged:false,error:"Paid download is temporarily unavailable; no x402 payment was requested. Retry later.",product:"Echobloom Atlas HTML5 Puzzle Starter Kit"});
+  }
+}
+const echobloomDownloadTokens=new Map();
+app.get("/v1/echobloom-source-kit",requireVerifiedEchobloomKit,payment,(req,res)=>{
+  const bytes=res.locals.echobloomKit;
+  if(!Buffer.isBuffer(bytes))return res.status(503).json({ok:false,charged:false,error:"Verified download bytes unavailable; no file delivered."});
+  const now=Date.now();
+  for(const [token,item] of echobloomDownloadTokens)if(item.expiresAt<=now)echobloomDownloadTokens.delete(token);
+  while(echobloomDownloadTokens.size>=100)echobloomDownloadTokens.delete(echobloomDownloadTokens.keys().next().value);
+  const token=crypto.randomBytes(24).toString("hex");
+  echobloomDownloadTokens.set(token,{bytes,expiresAt:now+10*60*1000});
+  const origin=req.protocol+"://"+req.get("host");
+  return res.status(200).set({"Cache-Control":"private, no-store"}).json({ok:true,paid:true,chargedUSDC:"4.99",network:NETWORK,kind:"echobloom_atlas_html5_source_kit",filename:"Echobloom_Atlas_HTML5_Puzzle_Starter_Kit.zip",contentType:"application/zip",downloadUrl:origin+"/v1/echobloom-source-kit/download?token="+token,downloadLinkExpiresInSeconds:600,sourceSha256:ECHOBLOOM_ZIP_SHA256,license:"single-project commercial use; no source-pack redistribution",aiAssisted:true});
+});
+app.get("/v1/echobloom-source-kit/download",(req,res)=>{
+  if(req.originalUrl!=="/v1/echobloom-source-kit/download?token="+encodeURIComponent(String(req.query.token||""))||typeof req.query.token!=="string"||!/^[0-9a-f]{48}$/.test(req.query.token))return res.status(400).json({ok:false,error:"Provide one valid, unexpired paid download token."});
+  const item=echobloomDownloadTokens.get(req.query.token);
+  if(!item||item.expiresAt<=Date.now()){echobloomDownloadTokens.delete(req.query.token);return res.status(410).json({ok:false,error:"This paid download link has expired. Use the purchase endpoint again with a valid receipt."});}
+  echobloomDownloadTokens.delete(req.query.token);
+  return res.status(200).set({"Content-Type":"application/zip","Content-Disposition":"attachment; filename=Echobloom_Atlas_HTML5_Puzzle_Starter_Kit.zip","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}).send(item.bytes);
+});
+
 app.get("/v1/x402-template",validateOptionalTemplateFormat,echoCanonicalX402ChallengeOnTemplate,payment,(_req,res)=>res.status(200).json({
   ok:true,paid:true,chargedUSDC:"0.01",network:NETWORK,
   kind:"x402_v2_openapi_starter",templateFormat:"YAML",openapiTemplate:paymentTemplate,
@@ -1380,7 +1433,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
   try{
     const origin=req.protocol+"://"+req.get("host");
     makeDiscovery(origin); // canonical public origin allowlist, no Host-based injection
-    const catalog=makeCatalog(origin,routes); // 22 genuine configured paid routes incl original VM1-payable MUSD read-only fact report
+    const catalog=makeCatalog(origin,routes); // 23 genuine configured paid routes incl original VM1-payable MUSD read-only fact report
     const resources=catalog.items.map(row=>{
       const path=new URL(row.resource).pathname;
       const matching=Object.entries(routes).filter(([key])=>key.endsWith(" "+path));
@@ -1394,7 +1447,7 @@ app.get("/.well-known/x402-bazaar-manifest.json",(req,res)=>{
         accepts:row.accepts.map(a=>({...a,extra:{...a.extra}})),
       };
     });
-    if(resources.length!==22)throw Error("Incomplete public manifest: expected 21 prior resources plus new Mezo MUSD fact report");
+    if(resources.length!==23)throw Error("Incomplete public manifest: expected 22 existing resources plus Echobloom source kit");
     res.setHeader("Cache-Control","public, max-age=120");
     return res.status(200).json({
       x402Version:2,provider:"VM5 Delivery Lab — original one-owner AI-assisted Base USDC tools",

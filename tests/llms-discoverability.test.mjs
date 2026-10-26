@@ -41,5 +41,5 @@ test("OpenAPI discovery declares free machine-readable seller guide",()=>{
  assert.deepEqual(row.security,[]);
  assert.ok(row.responses["200"]);
  // Offering free text must not create a new paid resource or URL in .well-known/x402.
- assert.equal(d.wellKnown.resources.length,22);
+ assert.equal(d.wellKnown.resources.length,23);
 });

@@ -44,7 +44,7 @@ test("Malformed public Mezo data requests fail before any x402 charge or RPC",as
 });
 test("Paid Mezo SKU appears as 22nd original payment route with Base-only Circle USDC x402 config",async()=>{
  const data=await (await fetch(BASE+"/.well-known/x402-bazaar-manifest.json")).json();
- assert.equal(data.resources.length,22);
+ assert.equal(data.resources.length,23);
  const mezo=data.resources.filter(x=>x.url===BASE+"/v1/mezo-musd-facts");
  assert.equal(mezo.length,1);
  const r=mezo[0];assert.equal(r.method,"GET");assert.equal(r.accepts.length,1);

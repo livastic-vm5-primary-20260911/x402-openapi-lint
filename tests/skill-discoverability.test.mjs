@@ -23,7 +23,7 @@ test("OpenAPI declares free skill and preserves original 14 paid x402 resources 
   assert.ok(op);
   assert.deepEqual(op.security,[]);
   assert.ok(op.responses["200"]);
-  assert.equal(d.wellKnown.resources.length,22);
+  assert.equal(d.wellKnown.resources.length,23);
   assert.ok(!d.wellKnown.resources.some(s=>s.endsWith("/skill.md")));
   const report=d.spec.paths["/v1/tapeout-cpu0-report"].get;
   assert.equal(report["x-payment-info"].payTo,OWNER);
